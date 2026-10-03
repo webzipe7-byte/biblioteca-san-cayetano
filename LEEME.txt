@@ -43,7 +43,7 @@ EN INTERNET (Render)
   4. Al terminar te da una dirección como https://biblioteca-san-cayetano.onrender.com
      Estudiantes: esa dirección.  Ejecutivos: la misma + /admin
   El disco "datos" guarda los libros y las fotos para que no se borren
-  al reiniciar (necesita el plan "Starter", de pago). En el plan gratis
+  al reiniciar (plan "Starter", de pago; ver render.yaml). Ahora está en el plan gratis:
   funciona, pero los cambios del panel se pierden cada vez que Render
   reinicia el servidor.
 
