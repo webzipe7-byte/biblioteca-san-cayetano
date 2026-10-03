@@ -1,0 +1,51 @@
+BIBLIOTECA VIRTUAL - COLEGIO SAN CAYETANO
+==========================================
+
+CÓMO ENCENDERLA
+  1. Doble clic en "iniciar.bat".
+  2. Se abre una ventana negra (NO la cierres) y el navegador con la página.
+  3. Para apagar: cierra la ventana negra.
+
+DIRECCIONES
+  Estudiantes:  http://localhost:3000
+  Ejecutivos:   http://localhost:3000/admin
+
+  Para celulares y tablets en el mismo wifi, la ventana negra muestra
+  una dirección como http://192.168.1.25:3000 (úsala en lugar de localhost).
+  Si Windows pregunta por el Firewall, presiona "Permitir acceso".
+
+CLAVE DEL PANEL DE EJECUTIVOS
+  La clave NO está en el código (el proyecto es público en GitHub).
+  En el computador del colegio: crea un archivo "config.json" en esta
+  carpeta con:
+      { "clave": "tu-clave" }
+  y vuelve a abrir iniciar.bat. Ese archivo nunca se sube a GitHub.
+  Si no hay clave, el panel queda bloqueado.
+  Tras 10 claves equivocadas, el panel se bloquea 15 minutos para esa conexión.
+
+EN INTERNET (Render)
+  1. Entra a https://render.com con tu cuenta de GitHub.
+  2. "New" -> "Blueprint" -> elige este repositorio. Render lee render.yaml.
+  3. Cuando pida la variable CLAVE, escribe la clave del panel.
+  4. Al terminar te da una dirección como https://biblioteca-san-cayetano.onrender.com
+     Estudiantes: esa dirección.  Ejecutivos: la misma + /admin
+  El disco "datos" guarda los libros y las fotos para que no se borren
+  al reiniciar (necesita el plan "Starter", de pago). En el plan gratis
+  funciona, pero los cambios del panel se pierden cada vez que Render
+  reinicia el servidor.
+
+QUÉ SE PUEDE HACER EN EL PANEL
+  - Agregar, editar y eliminar libros.
+  - Subir la foto de la portada (desde el celular se puede tomar con la cámara).
+  - Registrar préstamos (−) y devoluciones (+).
+  - Cambiar los textos de la página, los enlaces de redes sociales y las categorías.
+  Los estudiantes ven los cambios en menos de 10 segundos, sin recargar.
+
+ARCHIVOS
+  index.html  -> página de estudiantes
+  admin.html  -> panel de ejecutivos
+  server.js   -> servidor (necesita Node.js instalado)
+  datos.json  -> aquí se guardan los libros y textos (haz copias de seguridad)
+  config.json -> clave del panel (solo en el computador, no se sube)
+  render.yaml, package.json -> configuración para publicar en internet
+  fotos/      -> fotos subidas desde el panel

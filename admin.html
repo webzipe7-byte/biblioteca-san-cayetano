@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Ejecutivos - Biblioteca San Cayetano</title>
+<style>
+  :root {
+    --azul: #2f7fe0;
+    --azul-oscuro: #1c5fb8;
+    --azul-claro: #e6f0fd;
+    --negro: #111111;
+    --blanco: #ffffff;
+    --gris: #f3f6fb;
+    --borde: #d5deea;
+    --rojo: #c0392b;
+    --rojo-claro: #fde8e8;
+    --verde: #1e8e4e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: var(--negro); background: var(--gris); min-height: 100vh; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  [hidden] { display: none !important; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px; border: 2px solid var(--negro); background: var(--blanco);
+    font-weight: 600; text-decoration: none; color: var(--negro);
+    transition: background .2s, color .2s, border-color .2s, transform .1s;
+  }
+  .btn:hover { border-color: var(--azul); color: var(--azul); }
+  .btn:active { transform: scale(.96); }
+  .btn.primario { background: var(--azul); border-color: var(--azul); color: var(--blanco); }
+  .btn.primario:hover { background: var(--azul-oscuro); border-color: var(--azul-oscuro); color: var(--blanco); }
+  .btn.peligro { border-color: var(--rojo); color: var(--rojo); }
+  .btn.peligro:hover { background: var(--rojo); color: var(--blanco); }
+  .btn.chico { padding: 5px 10px; font-size: .85rem; }
+
+  /* ---------- Ingreso ---------- */
+  #ingreso { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+  .caja-ingreso {
+    background: var(--blanco); border: 3px solid var(--negro); border-top: 8px solid var(--azul);
+    padding: 32px; width: 100%; max-width: 380px; text-align: center;
+    animation: subir .5s ease-out;
+  }
+  @keyframes subir { from { opacity: 0; transform: translateY(20px); } }
+  .caja-ingreso img { width: 90px; height: 90px; margin-bottom: 12px; }
+  .caja-ingreso h1 { font-size: 1.5rem; }
+  .caja-ingreso p { color: #555; margin: 6px 0 20px; font-size: .95rem; }
+  .caja-ingreso input { width: 100%; padding: 12px; border: 2px solid var(--negro); margin-bottom: 12px; font-size: 1rem; text-align: center; }
+  .caja-ingreso input:focus { outline: none; border-color: var(--azul); }
+  .caja-ingreso .btn { width: 100%; justify-content: center; padding: 12px; }
+  .error { color: var(--rojo); font-size: .9rem; margin-top: 10px; min-height: 1.2em; }
+
+  /* ---------- Barra superior ---------- */
+  .top {
+    background: var(--blanco); border-bottom: 4px solid var(--azul);
+    padding: 12px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 20;
+  }
+  .top img { width: 46px; height: 46px; }
+  .top h1 { font-size: 1.25rem; flex: 1; }
+  .top h1 small { display: block; font-size: .75rem; color: #555; font-weight: 600; letter-spacing: 1px; }
+
+  .contenedor { max-width: 1150px; margin: 0 auto; padding: 24px; }
+
+  .ayuda {
+    background: var(--azul-claro); border-left: 5px solid var(--azul);
+    padding: 12px 16px; margin-bottom: 20px; font-size: .95rem; line-height: 1.5;
+  }
+
+  /* Números generales */
+  .resumen { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .dato { background: var(--blanco); border: 2px solid var(--negro); padding: 14px 16px; }
+  .dato b { display: block; font-size: 2rem; color: var(--azul); line-height: 1.1; }
+  .dato:nth-child(4) b { color: var(--negro); }
+  .dato span { font-size: .85rem; color: #444; font-weight: 600; }
+
+  /* Pestañas */
+  .pestanas { display: flex; gap: 0; border-bottom: 3px solid var(--negro); margin-bottom: 0; }
+  .pestana {
+    padding: 12px 20px; border: 3px solid transparent; border-bottom: none;
+    background: none; font-weight: 700; font-size: 1rem; color: #555; margin-bottom: -3px;
+  }
+  .pestana.activa { background: var(--blanco); border-color: var(--negro); color: var(--azul); }
+  .panel { background: var(--blanco); border: 3px solid var(--negro); border-top: none; padding: 22px; }
+
+  /* ---------- Lista de libros ---------- */
+  .acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .acciones input { flex: 1 1 240px; padding: 10px 12px; border: 2px solid var(--negro); }
+  .acciones input:focus { outline: none; border-color: var(--azul); }
+
+  .fila {
+    display: grid; grid-template-columns: 56px 1fr 120px 190px auto; gap: 14px; align-items: center;
+    padding: 12px 6px; border-bottom: 1px solid var(--borde);
+    animation: subir .3s ease-out both;
+  }
+  .fila.encabezado { font-size: .78rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .5px; padding-top: 0; animation: none; }
+  .mini {
+    width: 56px; aspect-ratio: 2/3; border: 2px solid var(--negro);
+    display: grid; place-items: center; font-size: 1.4rem; overflow: hidden; color: var(--blanco);
+  }
+  .mini img { width: 100%; height: 100%; object-fit: cover; }
+  .fila h3 { font-size: 1rem; }
+  .fila p { font-size: .85rem; color: #555; }
+  .etiqueta { display: inline-block; padding: 3px 10px; border-radius: 12px; background: var(--azul-claro); color: var(--azul-oscuro); font-size: .8rem; font-weight: 700; }
+  .sin-foto { font-size: .72rem; color: #a06000; font-weight: 600; }
+
+  .contador { display: flex; align-items: center; gap: 6px; }
+  .contador button {
+    width: 32px; height: 32px; border: 2px solid var(--negro); background: var(--blanco);
+    font-weight: 800; font-size: 1.1rem; border-radius: 50%;
+  }
+  .contador button:hover:not(:disabled) { background: var(--azul); border-color: var(--azul); color: var(--blanco); }
+  .contador button:disabled { opacity: .3; cursor: not-allowed; }
+  .contador .cant { min-width: 58px; text-align: center; font-weight: 700; }
+  .contador .cant.cero { color: var(--rojo); }
+  .botones { display: flex; gap: 6px; }
+  .vacio { padding: 30px; text-align: center; color: #666; }
+
+  /* ---------- Editor de libro ---------- */
+  .fondo {
+    position: fixed; inset: 0; background: rgba(10,30,60,.55); z-index: 40;
+    display: flex; justify-content: flex-end;
+    opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s;
+  }
+  .fondo.abierto { opacity: 1; visibility: visible; }
+  .editor {
+    background: var(--blanco); width: 100%; max-width: 760px; height: 100%; overflow-y: auto;
+    border-left: 4px solid var(--azul);
+    transform: translateX(40px); transition: transform .3s ease-out;
+    display: flex; flex-direction: column;
+  }
+  .fondo.abierto .editor { transform: none; }
+  .editor-cab { padding: 18px 24px; border-bottom: 2px solid var(--borde); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--blanco); z-index: 2; }
+  .editor-cab h2 { font-size: 1.3rem; }
+  .editor-cuerpo { padding: 20px 24px; display: grid; grid-template-columns: 1fr 200px; gap: 24px; flex: 1; }
+  .editor-pie { padding: 14px 24px; border-top: 2px solid var(--borde); display: flex; gap: 10px; justify-content: flex-end; position: sticky; bottom: 0; background: var(--blanco); }
+
+  fieldset { border: none; margin-bottom: 18px; }
+  legend { font-weight: 800; color: var(--azul-oscuro); margin-bottom: 10px; font-size: 1rem; }
+  .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .campo { display: flex; flex-direction: column; gap: 4px; }
+  .campo.ancho { grid-column: 1 / -1; }
+  .campo label { font-weight: 600; font-size: .9rem; }
+  .campo label em { color: var(--rojo); font-style: normal; }
+  .campo small { color: #666; font-size: .78rem; }
+  .campo input, .campo select, .campo textarea {
+    padding: 9px 11px; border: 2px solid var(--borde); background: var(--blanco); width: 100%;
+  }
+  .campo input:focus, .campo select:focus, .campo textarea:focus { outline: none; border-color: var(--azul); }
+  .campo textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
+  .campo input[type=color] { padding: 2px; height: 40px; }
+  .campo.malo input { border-color: var(--rojo); }
+
+  /* Zona para subir foto */
+  .zona-foto {
+    border: 3px dashed var(--azul); background: var(--azul-claro);
+    padding: 18px; text-align: center; cursor: pointer; transition: background .2s, border-color .2s;
+  }
+  .zona-foto:hover, .zona-foto.encima { background: #d3e5fc; border-color: var(--azul-oscuro); }
+  .zona-foto .grande { font-size: 2rem; }
+  .zona-foto b { display: block; margin: 4px 0; }
+  .zona-foto small { color: #555; }
+  .foto-actual { display: flex; gap: 14px; align-items: center; }
+  .foto-actual img { width: 80px; aspect-ratio: 2/3; object-fit: cover; border: 2px solid var(--negro); }
+  .subiendo { color: var(--azul-oscuro); font-weight: 600; font-size: .9rem; margin-top: 6px; }
+
+  /* Vista previa: cómo lo verá el estudiante */
+  .vista h4 { font-size: .85rem; color: #555; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+  .vista-tarjeta { border: 3px solid var(--negro); position: sticky; top: 90px; }
+  .portada {
+    aspect-ratio: 2/3; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; padding: 12px; color: var(--blanco); border-bottom: 3px solid var(--negro);
+    position: relative; overflow: hidden;
+  }
+  .portada.con-foto { padding: 0; }
+  .portada.con-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .portada .icono { font-size: 2.2rem; margin-bottom: 8px; }
+  .portada .t { font-weight: 800; font-size: .95rem; line-height: 1.2; }
+  .portada .a { font-size: .75rem; margin-top: 6px; opacity: .9; }
+  .vista-info { padding: 8px 10px; }
+  .vista-info h3 { font-size: .9rem; }
+  .vista-info p { font-size: .78rem; color: #555; }
+  .disp { display: inline-block; margin-top: 5px; font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .disp.si { background: var(--azul-claro); color: var(--azul-oscuro); }
+  .disp.no { background: var(--rojo-claro); color: var(--rojo); }
+
+  /* ---------- Pestaña Página ---------- */
+  .seccion-form { border: 2px solid var(--borde); padding: 18px; margin-bottom: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px 6px 14px; background: var(--azul-claro); border: 2px solid var(--azul); font-weight: 600; border-radius: 20px; }
+  .chip small { color: #555; font-weight: 400; }
+  .chip button { border: none; background: var(--blanco); width: 22px; height: 22px; border-radius: 50%; font-weight: 800; color: var(--rojo); }
+  .agregar-cat { display: flex; gap: 8px; max-width: 420px; }
+  .agregar-cat input { flex: 1; padding: 9px 11px; border: 2px solid var(--borde); }
+  .barra-guardar {
+    position: sticky; bottom: 0; background: var(--blanco); border-top: 3px solid var(--negro);
+    margin: 0 -22px -22px; padding: 14px 22px; display: flex; gap: 12px; align-items: center; justify-content: flex-end;
+  }
+  .pendiente { color: #a06000; font-weight: 700; margin-right: auto; }
+
+  /* Aviso flotante */
+  .aviso {
+    position: fixed; left: 50%; bottom: 84px; transform: translate(-50%, 200px);
+    background: var(--negro); color: var(--blanco); padding: 12px 20px; font-weight: 600;
+    border-left: 6px solid var(--azul); z-index: 60; transition: transform .3s; max-width: 90vw;
+  }
+  .aviso.ver { transform: translate(-50%, 0); }
+  .aviso.mal { border-left-color: var(--rojo); }
+
+  @media (max-width: 860px) {
+    .resumen { grid-template-columns: repeat(2, 1fr); }
+    .fila { grid-template-columns: 56px 1fr; }
+    .fila.encabezado { display: none; }
+    .fila > .col-cat, .fila > .contador, .fila > .botones { grid-column: 2; }
+    .editor-cuerpo { grid-template-columns: 1fr; }
+    .vista { order: -1; display: flex; gap: 14px; align-items: flex-start; }
+    .vista-tarjeta { width: 140px; position: static; }
+  }
+  @media (max-width: 560px) {
+    .top { padding: 10px 14px; }
+    .top h1 { font-size: 1.05rem; }
+    .top .btn { padding: 7px 10px; font-size: .85rem; }
+    .contenedor { padding: 14px; }
+    .panel { padding: 14px; }
+    .barra-guardar { margin: 0 -14px -14px; padding: 12px 14px; }
+    .campos { grid-template-columns: 1fr; }
+    .pestana { padding: 10px 12px; font-size: .92rem; }
+    .dato b { font-size: 1.6rem; }
+    .editor-cuerpo, .editor-cab, .editor-pie { padding-left: 16px; padding-right: 16px; }
+    .editor-pie { gap: 6px; }
+    .largo { display: none; }
+    .editor-pie .btn { padding: 8px 10px; font-size: .85rem; white-space: nowrap; }
+    .barra-guardar .btn { padding: 8px 10px; font-size: .85rem; }
+    .pendiente { flex: 1 1 100%; font-size: .85rem; }
+    .barra-guardar { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Ingreso con clave ===== -->
+<section id="ingreso">
+  <form class="caja-ingreso" id="formIngreso">
+    <img src="logo.png" alt="Escudo Colegio San Cayetano">
+    <h1>Panel de Ejecutivos</h1>
+    <p>Biblioteca Virtual · Colegio San Cayetano</p>
+    <input type="password" id="clave" placeholder="Escribe la clave" autocomplete="current-password" required>
+    <button class="btn primario" type="submit">Entrar</button>
+    <p class="error" id="errorIngreso"></p>
+  </form>
+</section>
+
+<!-- ===== Panel ===== -->
+<div id="app" hidden>
+  <header class="top">
+    <img src="logo.png" alt="">
+    <h1>Panel de Ejecutivos<small>BIBLIOTECA · COLEGIO SAN CAYETANO</small></h1>
+    <a class="btn" href="/" target="_blank">👁️ Ver página de estudiantes</a>
+    <button class="btn" id="salir">Salir</button>
+  </header>
+
+  <div class="contenedor">
+    <div class="ayuda">
+      👋 Aquí se administra lo que ven los estudiantes. <b>Todo cambio que guardes aparece en la página de estudiantes en pocos segundos</b>, sin tener que hacer nada más.
+    </div>
+
+    <div class="resumen">
+      <div class="dato"><b id="nTitulos">0</b><span>Títulos en el catálogo</span></div>
+      <div class="dato"><b id="nEjemplares">0</b><span>Ejemplares en total</span></div>
+      <div class="dato"><b id="nDisponibles">0</b><span>Disponibles para préstamo</span></div>
+      <div class="dato"><b id="nPrestados">0</b><span>Prestados ahora</span></div>
+    </div>
+
+    <nav class="pestanas">
+      <button class="pestana activa" data-p="libros">📚 Libros</button>
+      <button class="pestana" data-p="pagina">🎨 Textos de la página</button>
+    </nav>
+
+    <!-- Pestaña: libros -->
+    <section class="panel" id="pLibros">
+      <div class="acciones">
+        <input type="search" id="buscar" placeholder="🔍 Buscar libro por título o autor...">
+        <button class="btn primario" id="nuevo">➕ Agregar libro</button>
+      </div>
+      <p class="ayuda" style="margin-bottom:12px">Usa <b>−</b> cuando un estudiante se lleve un libro prestado y <b>+</b> cuando lo devuelva. Con <b>Editar</b> puedes cambiar la foto, la descripción y todos los datos.</p>
+      <div class="fila encabezado"><span>Portada</span><span>Libro</span><span>Categoría</span><span>Disponibles</span><span></span></div>
+      <div id="lista"></div>
+    </section>
+
+    <!-- Pestaña: textos de la página -->
+    <section class="panel" id="pPagina" hidden>
+      <form id="formSitio">
+        <div class="seccion-form">
+          <legend>Encabezado</legend>
+          <div class="campos">
+            <div class="campo"><label>Texto de la esquina</label><input name="seccion"><small>Ej: Estudiantes</small></div>
+            <div class="campo"><label>Texto pequeño debajo</label><input name="subtitulo"><small>Ej: COLEGIO SAN CAYETANO</small></div>
+            <div class="campo"><label>Título (en negro)</label><input name="titulo"><small>Ej: Biblioteca</small></div>
+            <div class="campo"><label>Título (en azul)</label><input name="tituloResaltado"><small>Ej: Colegio San Cayetano</small></div>
+          </div>
+        </div>
+        <div class="seccion-form">
+          <legend>Banner de bienvenida</legend>
+          <div class="campos">
+            <div class="campo ancho"><label>Título del banner</label><input name="bannerTitulo"></div>
+            <div class="campo ancho"><label>Mensaje del banner</label><textarea name="bannerTexto" style="min-height:70px"></textarea></div>
+            <div class="campo ancho"><label>Título del catálogo</label><input name="catalogoTitulo"></div>
+          </div>
+        </div>
+        <div class="seccion-form">
+          <legend>Redes sociales (círculos de la esquina)</legend>
+          <div class="campos">
+            <div class="campo ancho"><label>Facebook</label><input name="facebook" type="url" placeholder="https://www.facebook.com/..."></div>
+            <div class="campo ancho"><label>Instagram</label><input name="instagram" type="url" placeholder="https://www.instagram.com/..."></div>
+            <div class="campo ancho"><label>YouTube</label><input name="youtube" type="url" placeholder="https://www.youtube.com/..."><small>Si dejas un enlace vacío, ese círculo no se muestra.</small></div>
+          </div>
+        </div>
+        <div class="seccion-form">
+          <legend>Categorías (botones de filtro)</legend>
+          <div class="chips" id="chips"></div>
+          <div class="agregar-cat">
+            <input id="nuevaCat" placeholder="Nueva categoría, ej: Historia">
+            <button class="btn" type="button" id="agregarCat">Agregar</button>
+          </div>
+        </div>
+        <div class="seccion-form">
+          <legend>Pie de página</legend>
+          <div class="campo"><input name="pie"></div>
+        </div>
+        <div class="barra-guardar">
+          <span class="pendiente" id="pendiente" hidden>● Tienes cambios sin guardar</span>
+          <button class="btn" type="button" id="deshacerSitio">Deshacer</button>
+          <button class="btn primario" type="submit">💾 Guardar y publicar</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<!-- ===== Editor de libro (panel lateral) ===== -->
+<div class="fondo" id="fondoEditor">
+  <form class="editor" id="formLibro" novalidate>
+    <div class="editor-cab">
+      <h2 id="editorTitulo">Editar libro</h2>
+      <button class="btn chico" type="button" data-cerrar>✕ Cerrar</button>
+    </div>
+    <div class="editor-cuerpo">
+      <div>
+        <fieldset>
+          <legend>📷 Foto de la portada</legend>
+          <div id="fotoActual" class="foto-actual" hidden>
+            <img id="fotoImg" alt="">
+            <div>
+              <button class="btn chico" type="button" id="cambiarFoto">Cambiar foto</button>
+              <button class="btn chico peligro" type="button" id="quitarFoto">Quitar foto</button>
+            </div>
+          </div>
+          <div id="zonaFoto" class="zona-foto" tabindex="0">
+            <div class="grande">📷</div>
+            <b>Haz clic para elegir una foto o arrástrala aquí</b>
+            <small>Desde el celular también puedes tomarla con la cámara. Si no hay foto, se usa una portada de color.</small>
+          </div>
+          <input type="file" id="archivoFoto" accept="image/*" hidden>
+          <p class="subiendo" id="subiendo" hidden>Subiendo foto...</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>📖 Datos del libro</legend>
+          <div class="campos">
+            <div class="campo ancho"><label>Título <em>*</em></label><input name="titulo" required></div>
+            <div class="campo ancho"><label>Autor</label><input name="autor"></div>
+            <div class="campo"><label>Categoría</label><select name="categoria" id="selCategoria"></select></div>
+            <div class="campo"><label>Año</label><input name="año"></div>
+            <div class="campo"><label>Páginas</label><input name="paginas" type="number" min="0"></div>
+            <div class="campo"><label>Ubicación</label><input name="ubicacion" placeholder="Ej: Estante A-1"></div>
+            <div class="campo ancho"><label>Descripción (la ven al hacer clic en el libro)</label><textarea name="descripcion"></textarea></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>📦 Unidades</legend>
+          <div class="campos">
+            <div class="campo"><label>Total de ejemplares en el colegio</label><input name="unidades" type="number" min="0" required></div>
+            <div class="campo" id="campoDisp"><label>Disponibles para préstamo</label><input name="disponibles" type="number" min="0" required><small id="avisoDisp">No puede ser mayor que el total.</small></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>🎨 Portada de color (cuando no hay foto)</legend>
+          <div class="campos">
+            <div class="campo"><label>Color</label><input name="color" type="color"></div>
+            <div class="campo"><label>Emoji / ícono</label><input name="icono" maxlength="4" placeholder="📘"></div>
+          </div>
+        </fieldset>
+      </div>
+
+      <aside class="vista">
+        <h4>Así lo verán los estudiantes</h4>
+        <div class="vista-tarjeta" id="vistaPrevia"></div>
+      </aside>
+    </div>
+    <div class="editor-pie">
+      <button class="btn peligro" type="button" id="eliminar" style="margin-right:auto">🗑️ Eliminar<span class="largo"> libro</span></button>
+      <button class="btn" type="button" data-cerrar>Cancelar</button>
+      <button class="btn primario" type="submit">💾 Guardar<span class="largo"> y publicar</span></button>
+    </div>
+  </form>
+</div>
+
+<div class="aviso" id="aviso"></div>
+
+<script>
+  let datos = null;
+  let clave = "";
+  try { clave = sessionStorage.getItem("claveBiblioteca") || ""; } catch {}
+
+  const $ = id => document.getElementById(id);
+  const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function aviso(texto, mal) {
+    const a = $("aviso");
+    a.textContent = texto;
+    a.className = "aviso ver" + (mal ? " mal" : "");
+    clearTimeout(aviso.t);
+    aviso.t = setTimeout(() => a.className = "aviso", 3200);
+  }
+
+  async function api(metodo, ruta, cuerpo) {
+    const r = await fetch(ruta, {
+      method: metodo,
+      headers: { "Content-Type": "application/json", "X-Clave": clave },
+      body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 401) { salir(); throw new Error("La sesión se cerró. Vuelve a entrar."); }
+    if (!r.ok) throw new Error(j.error || "Error del servidor");
+    return j;
+  }
+
+  // Guarda todo en el servidor (y así se actualiza la página de estudiantes)
+  async function publicar(mensaje = "✓ Guardado. Los estudiantes ya ven los cambios.") {
+    try {
+      await api("PUT", "/api/datos", datos);
+      aviso(mensaje);
+      return true;
+    } catch (e) {
+      aviso("✗ No se pudo guardar: " + e.message, true);
+      return false;
+    }
+  }
+
+  // ---------- Ingreso ----------
+  async function entrar(c) {
+    clave = c;
+    const r = await fetch("/api/login", { method: "POST", headers: { "X-Clave": c } });
+    if (r.status === 429) throw new Error((await r.json()).error);
+    if (!r.ok) throw new Error("Clave incorrecta");
+    try { sessionStorage.setItem("claveBiblioteca", c); } catch {}
+    datos = await (await fetch("/api/datos", { cache: "no-store" })).json();
+    $("ingreso").hidden = true;
+    $("app").hidden = false;
+    pintarTodo();
+  }
+  function salir() {
+    clave = "";
+    try { sessionStorage.removeItem("claveBiblioteca"); } catch {}
+    $("app").hidden = true;
+    $("ingreso").hidden = false;
+    cerrarEditor();
+  }
+  $("formIngreso").addEventListener("submit", async e => {
+    e.preventDefault();
+    $("errorIngreso").textContent = "";
+    try { await entrar($("clave").value.trim()); }
+    catch (err) {
+      $("errorIngreso").textContent = err.message === "Clave incorrecta"
+        ? "Clave incorrecta. Revisa que no tenga mayúsculas ni espacios."
+        : err.message.startsWith("Demasiados") ? err.message
+        : "No hay conexión con el servidor. Abre iniciar.bat (deja la ventana negra abierta) y entra a http://localhost:3000/admin";
+    }
+  });
+  $("salir").addEventListener("click", salir);
+
+  // ---------- Pestañas ----------
+  document.querySelectorAll(".pestana").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(".pestana").forEach(x => x.classList.toggle("activa", x === b));
+    $("pLibros").hidden = b.dataset.p !== "libros";
+    $("pPagina").hidden = b.dataset.p !== "pagina";
+  }));
+
+  function pintarTodo() { pintarResumen(); pintarLista(); llenarSitio(); }
+
+  function pintarResumen() {
+    const total = datos.libros.reduce((s, l) => s + (+l.unidades || 0), 0);
+    const disp = datos.libros.reduce((s, l) => s + (+l.disponibles || 0), 0);
+    $("nTitulos").textContent = datos.libros.length;
+    $("nEjemplares").textContent = total;
+    $("nDisponibles").textContent = disp;
+    $("nPrestados").textContent = total - disp;
+  }
+
+  function miniHTML(l) {
+    return l.foto
+      ? `<div class="mini"><img src="${esc(l.foto)}" alt=""></div>`
+      : `<div class="mini" style="background:${esc(l.color || "#2f7fe0")}">${esc(l.icono || "📘")}</div>`;
+  }
+
+  // ---------- Lista de libros ----------
+  function pintarLista() {
+    const q = $("buscar").value.toLowerCase().trim();
+    const lista = datos.libros.filter(l => (l.titulo + " " + l.autor).toLowerCase().includes(q));
+    $("lista").innerHTML = lista.length ? lista.map((l, n) => `
+      <div class="fila" data-id="${esc(l.id)}" style="animation-delay:${n * 0.03}s">
+        ${miniHTML(l)}
+        <div>
+          <h3>${esc(l.titulo)}</h3>
+          <p>${esc(l.autor) || "Sin autor"}</p>
+          ${l.foto ? "" : '<span class="sin-foto">⚠ Sin foto</span>'}
+        </div>
+        <div class="col-cat"><span class="etiqueta">${esc(l.categoria) || "—"}</span></div>
+        <div class="contador">
+          <button type="button" data-acc="menos" title="Se prestó un ejemplar" ${l.disponibles <= 0 ? "disabled" : ""}>−</button>
+          <span class="cant ${l.disponibles <= 0 ? "cero" : ""}">${l.disponibles} de ${l.unidades}</span>
+          <button type="button" data-acc="mas" title="Se devolvió un ejemplar" ${l.disponibles >= l.unidades ? "disabled" : ""}>+</button>
+        </div>
+        <div class="botones">
+          <button class="btn chico" type="button" data-acc="editar">✏️ Editar</button>
+        </div>
+      </div>`).join("")
+      : `<p class="vacio">${datos.libros.length ? "No hay libros con esa búsqueda." : "Todavía no hay libros. Usa “Agregar libro”."}</p>`;
+  }
+  $("buscar").addEventListener("input", pintarLista);
+
+  $("lista").addEventListener("click", async e => {
+    const b = e.target.closest("button[data-acc]");
+    if (!b) return;
+    const libro = datos.libros.find(l => l.id === b.closest(".fila").dataset.id);
+    if (b.dataset.acc === "editar") return abrirEditor(libro);
+    const antes = libro.disponibles;
+    libro.disponibles = Math.max(0, Math.min(libro.unidades, antes + (b.dataset.acc === "mas" ? 1 : -1)));
+    pintarLista(); pintarResumen();
+    const ok = await publicar(b.dataset.acc === "mas"
+      ? `✓ Devolución registrada: “${libro.titulo}” (${libro.disponibles} disponibles)`
+      : `✓ Préstamo registrado: “${libro.titulo}” (${libro.disponibles} disponibles)`);
+    if (!ok) { libro.disponibles = antes; pintarLista(); pintarResumen(); }
+  });
+
+  // ---------- Editor de libro ----------
+  const form = $("formLibro");
+  let editando = null;   // libro original (null = nuevo)
+  let fotoForm = "";
+
+  function abrirEditor(libro) {
+    editando = libro || null;
+    const l = libro || { titulo: "", autor: "", categoria: datos.sitio.categorias[0] || "", año: "", paginas: "", ubicacion: "", descripcion: "", unidades: 1, disponibles: 1, color: "#2f7fe0", icono: "📘", foto: "" };
+    $("editorTitulo").textContent = libro ? "Editar libro" : "Agregar libro nuevo";
+    $("eliminar").hidden = !libro;
+    $("selCategoria").innerHTML = datos.sitio.categorias.map(c => `<option>${esc(c)}</option>`).join("")
+      + (l.categoria && !datos.sitio.categorias.includes(l.categoria) ? `<option>${esc(l.categoria)}</option>` : "");
+    for (const k of ["titulo", "autor", "categoria", "año", "paginas", "ubicacion", "descripcion", "unidades", "disponibles", "color", "icono"]) {
+      form.elements[k].value = l[k] ?? "";
+    }
+    fotoForm = l.foto || "";
+    pintarFoto();
+    actualizarVista();
+    $("fondoEditor").classList.add("abierto");
+    setTimeout(() => form.elements.titulo.focus(), 300);
+  }
+  function cerrarEditor() { $("fondoEditor").classList.remove("abierto"); }
+  document.querySelectorAll("[data-cerrar]").forEach(b => b.addEventListener("click", cerrarEditor));
+  $("fondoEditor").addEventListener("click", e => { if (e.target === $("fondoEditor")) cerrarEditor(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarEditor(); });
+  $("nuevo").addEventListener("click", () => abrirEditor(null));
+
+  function leerForm() {
+    const f = form.elements;
+    return {
+      titulo: f.titulo.value.trim(), autor: f.autor.value.trim(), categoria: f.categoria.value,
+      año: f.año.value.trim(), paginas: f.paginas.value === "" ? "" : +f.paginas.value,
+      ubicacion: f.ubicacion.value.trim(), descripcion: f.descripcion.value.trim(),
+      unidades: Math.max(0, +f.unidades.value || 0), disponibles: Math.max(0, +f.disponibles.value || 0),
+      color: f.color.value, icono: f.icono.value.trim() || "📘", foto: fotoForm,
+    };
+  }
+
+  function actualizarVista() {
+    const l = leerForm();
+    const malo = l.disponibles > l.unidades;
+    $("campoDisp").classList.toggle("malo", malo);
+    $("avisoDisp").style.color = malo ? "var(--rojo)" : "";
+    const portada = l.foto
+      ? `<div class="portada con-foto"><img src="${esc(l.foto)}" alt=""></div>`
+      : `<div class="portada" style="background:${esc(l.color)}"><div class="icono">${esc(l.icono)}</div><div class="t">${esc(l.titulo || "Título")}</div><div class="a">${esc(l.autor)}</div></div>`;
+    $("vistaPrevia").innerHTML = `${portada}
+      <div class="vista-info">
+        <h3>${esc(l.titulo || "Título del libro")}</h3>
+        <p>${esc(l.autor || "Autor")}</p>
+        <span class="disp ${l.disponibles ? "si" : "no"}">${l.disponibles ? l.disponibles + (l.disponibles == 1 ? " disponible" : " disponibles") : "Agotado"}</span>
+      </div>`;
+  }
+  form.addEventListener("input", actualizarVista);
+
+  // ----- Foto -----
+  function pintarFoto() {
+    $("fotoActual").hidden = !fotoForm;
+    $("zonaFoto").hidden = !!fotoForm;
+    if (fotoForm) $("fotoImg").src = fotoForm;
+  }
+  const elegir = () => $("archivoFoto").click();
+  $("zonaFoto").addEventListener("click", elegir);
+  $("zonaFoto").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); elegir(); } });
+  $("cambiarFoto").addEventListener("click", elegir);
+  $("quitarFoto").addEventListener("click", () => { fotoForm = ""; pintarFoto(); actualizarVista(); });
+  $("archivoFoto").addEventListener("change", e => { if (e.target.files[0]) subirFoto(e.target.files[0]); e.target.value = ""; });
+  ["dragenter", "dragover"].forEach(ev => $("zonaFoto").addEventListener(ev, e => { e.preventDefault(); $("zonaFoto").classList.add("encima"); }));
+  ["dragleave", "drop"].forEach(ev => $("zonaFoto").addEventListener(ev, e => { e.preventDefault(); $("zonaFoto").classList.remove("encima"); }));
+  $("zonaFoto").addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) subirFoto(f); });
+
+  // Achica la foto antes de subirla para que la página cargue rápido
+  function achicar(archivo, maxAlto = 900) {
+    return new Promise((ok, mal) => {
+      const img = new Image();
+      img.onload = () => {
+        const escala = Math.min(1, maxAlto / img.height, (maxAlto * 0.75) / img.width);
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * escala);
+        c.height = Math.round(img.height * escala);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(img.src);
+        ok(c.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = () => mal(new Error("Ese archivo no es una imagen válida"));
+      img.src = URL.createObjectURL(archivo);
+    });
+  }
+  async function subirFoto(archivo) {
+    if (!archivo.type.startsWith("image/")) return aviso("✗ Elige un archivo de imagen (JPG o PNG)", true);
+    $("subiendo").hidden = false;
+    try {
+      const { ruta } = await api("POST", "/api/foto", { imagen: await achicar(archivo) });
+      fotoForm = ruta;
+      pintarFoto(); actualizarVista();
+      aviso("✓ Foto lista. Presiona “Guardar y publicar” para que la vean los estudiantes.");
+    } catch (e) { aviso("✗ " + e.message, true); }
+    $("subiendo").hidden = true;
+  }
+
+  // ----- Guardar / eliminar -----
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const l = leerForm();
+    if (!l.titulo) { form.elements.titulo.focus(); return aviso("✗ El libro necesita un título", true); }
+    if (l.disponibles > l.unidades) { form.elements.disponibles.focus(); return aviso("✗ Los disponibles no pueden ser más que el total", true); }
+    const copia = JSON.stringify(datos.libros);
+    if (editando) Object.assign(editando, l);
+    else datos.libros.unshift({ id: "l" + Date.now(), ...l });
+    if (await publicar(editando ? `✓ “${l.titulo}” actualizado. Los estudiantes ya lo ven.` : `✓ “${l.titulo}” agregado al catálogo.`)) {
+      cerrarEditor(); pintarLista(); pintarResumen();
+    } else datos.libros = JSON.parse(copia);
+  });
+
+  $("eliminar").addEventListener("click", async () => {
+    if (!editando || !confirm(`¿Eliminar “${editando.titulo}” del catálogo?\nLos estudiantes ya no lo verán.`)) return;
+    const copia = datos.libros;
+    datos.libros = datos.libros.filter(l => l !== editando);
+    if (await publicar(`✓ “${editando.titulo}” eliminado.`)) { cerrarEditor(); pintarLista(); pintarResumen(); }
+    else datos.libros = copia;
+  });
+
+  // ---------- Textos de la página ----------
+  const formSitio = $("formSitio");
+  let catsForm = [];
+  const camposSitio = ["seccion", "subtitulo", "titulo", "tituloResaltado", "bannerTitulo", "bannerTexto", "catalogoTitulo", "pie"];
+
+  function llenarSitio() {
+    const s = datos.sitio;
+    for (const k of camposSitio) formSitio.elements[k].value = s[k] || "";
+    for (const r of ["facebook", "instagram", "youtube"]) formSitio.elements[r].value = (s.redes || {})[r] || "";
+    catsForm = [...(s.categorias || [])];
+    pintarChips();
+    $("pendiente").hidden = true;
+  }
+  function pintarChips() {
+    $("chips").innerHTML = catsForm.map((c, i) => {
+      const n = datos.libros.filter(l => l.categoria === c).length;
+      return `<span class="chip">${esc(c)} <small>(${n})</small><button type="button" data-i="${i}" title="Quitar">×</button></span>`;
+    }).join("") || '<span style="color:#666">No hay categorías.</span>';
+  }
+  $("chips").addEventListener("click", e => {
+    const b = e.target.closest("button[data-i]");
+    if (!b) return;
+    const c = catsForm[b.dataset.i];
+    const n = datos.libros.filter(l => l.categoria === c).length;
+    if (n && !confirm(`${n} libro(s) están en “${c}”. Si la quitas, seguirán en el catálogo pero no aparecerán en ese filtro.\n¿Quitarla?`)) return;
+    catsForm.splice(b.dataset.i, 1);
+    pintarChips(); $("pendiente").hidden = false;
+  });
+  function agregarCat() {
+    const v = $("nuevaCat").value.trim();
+    if (!v) return;
+    if (catsForm.some(c => c.toLowerCase() === v.toLowerCase())) return aviso("Esa categoría ya existe", true);
+    catsForm.push(v); $("nuevaCat").value = "";
+    pintarChips(); $("pendiente").hidden = false;
+  }
+  $("agregarCat").addEventListener("click", agregarCat);
+  $("nuevaCat").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); agregarCat(); } });
+  formSitio.addEventListener("input", e => { if (e.target.id !== "nuevaCat") $("pendiente").hidden = false; });
+  $("deshacerSitio").addEventListener("click", llenarSitio);
+
+  formSitio.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!formSitio.reportValidity()) return;
+    const antes = datos.sitio;
+    const s = { ...antes, redes: {}, categorias: [...catsForm] };
+    for (const k of camposSitio) s[k] = formSitio.elements[k].value.trim();
+    for (const r of ["facebook", "instagram", "youtube"]) s.redes[r] = formSitio.elements[r].value.trim();
+    datos.sitio = s;
+    if (await publicar()) $("pendiente").hidden = true;
+    else datos.sitio = antes;
+  });
+
+  window.addEventListener("beforeunload", e => { if (!$("pendiente").hidden) e.preventDefault(); });
+
+  // Si se abrió el archivo con doble clic (sin servidor), se avisa de una vez
+  if (!location.protocol.startsWith("http")) {
+    $("errorIngreso").innerHTML = "⚠ Abriste el archivo directamente y así no funciona la clave.<br>Haz doble clic en <b>iniciar.bat</b> y entra a <b>http://localhost:3000/admin</b>";
+  }
+  // Si ya había entrado en esta pestaña, entra directo
+  else if (clave) entrar(clave).catch(() => { clave = ""; });
+</script>
+</body>
+</html>
