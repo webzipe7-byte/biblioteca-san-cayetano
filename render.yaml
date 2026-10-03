@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: biblioteca-san-cayetano
+    runtime: node
+    plan: starter
+    buildCommand: "true"
+    startCommand: node server.js
+    envVars:
+      - key: CLAVE
+        sync: false
+      - key: CARPETA_DATOS
+        value: /var/data
+    disk:
+      name: datos
+      mountPath: /var/data
+      sizeGB: 1
