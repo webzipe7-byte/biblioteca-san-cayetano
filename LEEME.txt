@@ -21,7 +21,20 @@ CLAVE DEL PANEL DE EJECUTIVOS
       { "clave": "tu-clave" }
   y vuelve a abrir iniciar.bat. Ese archivo nunca se sube a GitHub.
   Si no hay clave, el panel queda bloqueado.
-  Tras 10 claves equivocadas, el panel se bloquea 15 minutos para esa conexión.
+  Para internet usa una clave larga (12 caracteres o más), distinta a la de siempre.
+
+SEGURIDAD (ya viene activada)
+  - Tras 10 claves equivocadas, esa conexión queda bloqueada 15 minutos.
+  - Al entrar al panel se crea una sesión de 8 horas; la clave no se guarda
+    en el navegador. "Salir" cierra la sesión en el servidor.
+  - El servidor revisa todo lo que se guarda: enlaces solo https, colores,
+    números y fotos válidas, y textos con largo máximo.
+  - Las fotos se revisan por dentro: solo se aceptan JPG, PNG o WEBP reales.
+  - La página bloquea scripts ajenos (Content-Security-Policy), no se puede
+    meter dentro de otra página (anti-clickjacking) y en internet siempre
+    usa HTTPS.
+  - Solo se pueden ver las páginas, el logo y las fotos: server.js,
+    config.json y los demás archivos no se pueden descargar.
 
 EN INTERNET (Render)
   1. Entra a https://render.com con tu cuenta de GitHub.

@@ -559,7 +559,7 @@
     if (l.foto) {
       return `<div class="portada con-foto"><img src="${esc(l.foto)}" alt="Portada de ${esc(l.titulo)}" loading="lazy"></div>`;
     }
-    return `<div class="portada" style="background:${esc(l.color || "#2f7fe0")}">
+    return `<div class="portada" style="background:${/^#[0-9a-f]{6}$/i.test(l.color) ? l.color : "#2f7fe0"}">
               <div class="icono">${esc(l.icono || "📘")}</div>
               <div class="t">${esc(l.titulo)}</div>
               <div class="a">${esc(l.autor)}</div>
@@ -586,7 +586,7 @@
         <div class="info">
           <h3>${esc(l.titulo)}</h3>
           <p>${esc(l.autor)}</p>
-          <span class="disp ${l.disponibles ? "si" : "no"}">${l.disponibles ? l.disponibles + (l.disponibles == 1 ? " disponible" : " disponibles") : "Agotado"}</span>
+          <span class="disp ${l.disponibles ? "si" : "no"}">${l.disponibles ? esc(l.disponibles) + (l.disponibles == 1 ? " disponible" : " disponibles") : "Agotado"}</span>
         </div>
       </article>`).join("");
 
@@ -614,9 +614,9 @@
     unidades.innerHTML = `
       <h4>📦 Unidades disponibles</h4>
       <div class="cifras">
-        <div class="cifra"><span class="num" data-hasta="${l.disponibles}">0</span><small>Disponibles</small></div>
-        <div class="cifra"><span class="num" data-hasta="${l.unidades - l.disponibles}">0</span><small>Prestados</small></div>
-        <div class="cifra"><span class="num" data-hasta="${l.unidades}">0</span><small>Total en el colegio</small></div>
+        <div class="cifra"><span class="num" data-hasta="${esc(l.disponibles)}">0</span><small>Disponibles</small></div>
+        <div class="cifra"><span class="num" data-hasta="${esc(l.unidades - l.disponibles)}">0</span><small>Prestados</small></div>
+        <div class="cifra"><span class="num" data-hasta="${esc(l.unidades)}">0</span><small>Total en el colegio</small></div>
       </div>
       <div class="barra-unidades"><div class="relleno"></div></div>
       <p class="nota">${l.disponibles ? `Quedan <b>${l.disponibles}</b> de <b>${l.unidades}</b> ejemplares para préstamo.` : "Todos los ejemplares están prestados en este momento."}</p>`;
@@ -676,7 +676,9 @@
     texto("sCatalogoTitulo", s.catalogoTitulo);
     texto("sPie", s.pie);
     if (s.redes) {
-      const red = (id, url) => { const a = document.getElementById(id); a.style.display = url ? "" : "none"; if (url) a.href = url; };
+      // solo se aceptan enlaces https (nunca "javascript:" u otros trucos)
+      const segura = u => { try { return new URL(u).protocol === "https:" ? u : ""; } catch { return ""; } };
+      const red = (id, url) => { url = segura(url); const a = document.getElementById(id); a.style.display = url ? "" : "none"; if (url) a.href = url; };
       red("rFacebook", s.redes.facebook);
       red("rInstagram", s.redes.instagram);
       red("rYoutube", s.redes.youtube);

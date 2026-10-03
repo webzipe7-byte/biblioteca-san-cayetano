@@ -258,7 +258,7 @@
   <header class="top">
     <img src="logo.png" alt="">
     <h1>Panel de Ejecutivos<small>BIBLIOTECA · COLEGIO SAN CAYETANO</small></h1>
-    <a class="btn" href="/" target="_blank">👁️ Ver página de estudiantes</a>
+    <a class="btn" href="/" target="_blank" rel="noopener">👁️ Ver página de estudiantes</a>
     <button class="btn" id="salir">Salir</button>
   </header>
 
@@ -414,8 +414,9 @@
 
 <script>
   let datos = null;
-  let clave = "";
-  try { clave = sessionStorage.getItem("claveBiblioteca") || ""; } catch {}
+  // Sesión temporal que entrega el servidor al entrar (la clave no se guarda en el navegador)
+  let sesion = "";
+  try { sesion = sessionStorage.getItem("sesionBiblioteca") || ""; sessionStorage.removeItem("claveBiblioteca"); } catch {}
 
   const $ = id => document.getElementById(id);
   const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -431,7 +432,7 @@
   async function api(metodo, ruta, cuerpo) {
     const r = await fetch(ruta, {
       method: metodo,
-      headers: { "Content-Type": "application/json", "X-Clave": clave },
+      headers: { "Content-Type": "application/json", "X-Sesion": sesion },
       body: cuerpo ? JSON.stringify(cuerpo) : undefined,
     });
     const j = await r.json().catch(() => ({}));
@@ -454,19 +455,23 @@
 
   // ---------- Ingreso ----------
   async function entrar(c) {
-    clave = c;
     const r = await fetch("/api/login", { method: "POST", headers: { "X-Clave": c } });
     if (r.status === 429) throw new Error((await r.json()).error);
     if (!r.ok) throw new Error("Clave incorrecta");
-    try { sessionStorage.setItem("claveBiblioteca", c); } catch {}
+    sesion = (await r.json()).sesion;
+    try { sessionStorage.setItem("sesionBiblioteca", sesion); } catch {}
+    await abrirPanel();
+  }
+  async function abrirPanel() {
     datos = await (await fetch("/api/datos", { cache: "no-store" })).json();
     $("ingreso").hidden = true;
     $("app").hidden = false;
     pintarTodo();
   }
   function salir() {
-    clave = "";
-    try { sessionStorage.removeItem("claveBiblioteca"); } catch {}
+    if (sesion) fetch("/api/logout", { method: "POST", headers: { "X-Sesion": sesion } }).catch(() => {});
+    sesion = "";
+    try { sessionStorage.removeItem("sesionBiblioteca"); } catch {}
     $("app").hidden = true;
     $("ingreso").hidden = false;
     cerrarEditor();
@@ -474,7 +479,7 @@
   $("formIngreso").addEventListener("submit", async e => {
     e.preventDefault();
     $("errorIngreso").textContent = "";
-    try { await entrar($("clave").value.trim()); }
+    try { await entrar($("clave").value.trim()); $("clave").value = ""; }
     catch (err) {
       $("errorIngreso").textContent = err.message === "Clave incorrecta"
         ? "Clave incorrecta. Revisa que no tenga mayúsculas ni espacios."
@@ -729,7 +734,9 @@
     $("errorIngreso").innerHTML = "⚠ Abriste el archivo directamente y así no funciona la clave.<br>Haz doble clic en <b>iniciar.bat</b> y entra a <b>http://localhost:3000/admin</b>";
   }
   // Si ya había entrado en esta pestaña, entra directo
-  else if (clave) entrar(clave).catch(() => { clave = ""; });
+  else if (sesion) fetch("/api/sesion", { headers: { "X-Sesion": sesion } })
+    .then(r => { if (!r.ok) throw 0; return abrirPanel(); })
+    .catch(() => { sesion = ""; try { sessionStorage.removeItem("sesionBiblioteca"); } catch {} });
 </script>
 </body>
 </html>
