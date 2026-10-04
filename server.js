@@ -23,6 +23,9 @@ const RAIZ = __dirname;
 // En el hosting, CARPETA_DATOS apunta a un disco que no se borra al reiniciar
 const CARPETA_DATOS = process.env.CARPETA_DATOS || RAIZ;
 const DATOS = path.join(CARPETA_DATOS, "datos.json");
+// Las reseñas van aparte: así guardar el catálogo nunca borra una reseña recién enviada.
+// No se suben a GitHub porque llevan nombres de estudiantes.
+const RESENAS = path.join(CARPETA_DATOS, "resenas.json");
 const FOTOS = path.join(CARPETA_DATOS, "fotos");
 if (!fs.existsSync(FOTOS)) fs.mkdirSync(FOTOS, { recursive: true });
 // La primera vez en un disco nuevo se copian los libros y fotos que vienen con el proyecto
@@ -80,6 +83,24 @@ function cabecerasBase(res) {
 }
 
 function leerDatos() { return JSON.parse(fs.readFileSync(DATOS, "utf8")); }
+
+function guardarJSON(archivo, datos) {
+  // se guarda primero en un archivo temporal para no dañar el original si algo falla
+  fs.writeFileSync(archivo + ".tmp", JSON.stringify(datos, null, 2));
+  fs.renameSync(archivo + ".tmp", archivo);
+}
+
+// { actualizado, lista: [{ id, libroId, nombre, estrellas, texto, fecha, aprobada }] }
+function leerResenas() {
+  try { return JSON.parse(fs.readFileSync(RESENAS, "utf8")); }
+  catch { return { actualizado: 0, lista: [] }; }
+}
+function guardarResenas(r) {
+  r.actualizado = Date.now();
+  guardarJSON(RESENAS, r);
+}
+// Lo que ven los estudiantes: solo las reseñas aprobadas, sin campos internos
+const resenaPublica = ({ id, libroId, nombre, estrellas, texto, fecha }) => ({ id, libroId, nombre, estrellas, texto, fecha });
 
 function responder(res, codigo, cuerpo) {
   res.writeHead(codigo, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
@@ -260,7 +281,52 @@ const servidor = http.createServer(async (req, res) => {
         return responder(res, 415, { error: "Formato no permitido" });
 
       if (url.pathname === "/api/datos" && req.method === "GET") {
-        return responder(res, 200, leerDatos());
+        const datos = leerDatos(), r = leerResenas();
+        datos.resenas = r.lista.filter(x => x.aprobada).map(resenaPublica);
+        // la página de estudiantes se actualiza cuando cambian los libros o las reseñas
+        datos.actualizado = Math.max(datos.actualizado || 0, r.actualizado || 0);
+        return responder(res, 200, datos);
+      }
+
+      // Un estudiante envía una reseña: queda esperando que un ejecutivo la apruebe
+      if (url.pathname === "/api/resenas" && req.method === "POST") {
+        // todo el colegio puede salir a internet con la misma IP, por eso el límite es generoso
+        if (contar("resena", req, 40, 60)) return responder(res, 429, { error: "Se enviaron muchas reseñas seguidas. Intenta más tarde." });
+        const d = jsonDe(await leerCuerpo(req, 8 * 1024)) || {};
+        if (d.web) return responder(res, 200, { ok: true }); // campo trampa: solo lo llenan los robots
+        const libroId = texto(d.libroId, 40);
+        const nombre = texto(d.nombre, 40);
+        const comentario = texto(d.texto, 500);
+        const estrellas = Math.floor(Number(d.estrellas));
+        if (!leerDatos().libros.some(l => l.id === libroId)) return responder(res, 400, { error: "Ese libro no existe" });
+        if (!nombre) return responder(res, 400, { error: "Escribe tu nombre" });
+        if (!(estrellas >= 1 && estrellas <= 5)) return responder(res, 400, { error: "Elige de 1 a 5 estrellas" });
+        if (comentario.length < 5) return responder(res, 400, { error: "Cuéntanos un poco más sobre el libro" });
+        const r = leerResenas();
+        if (r.lista.filter(x => !x.aprobada).length >= 200)
+          return responder(res, 503, { error: "Hay muchas reseñas esperando revisión. Intenta en unos días." });
+        if (r.lista.length >= 3000) return responder(res, 503, { error: "No se pueden recibir más reseñas por ahora." });
+        r.lista.push({ id: "r" + Date.now() + crypto.randomBytes(3).toString("hex"), libroId, nombre, estrellas, texto: comentario, fecha: Date.now(), aprobada: false });
+        guardarJSON(RESENAS, r); // sin cambiar "actualizado": los estudiantes todavía no la ven
+        return responder(res, 200, { ok: true });
+      }
+
+      // Panel: todas las reseñas, también las que esperan aprobación
+      if (url.pathname === "/api/resenas" && req.method === "GET") {
+        if (!sesionValida(req)) return responder(res, 401, { error: "Sesión vencida" });
+        return responder(res, 200, leerResenas().lista);
+      }
+
+      if ((url.pathname === "/api/resenas/aprobar" || url.pathname === "/api/resenas/borrar") && req.method === "POST") {
+        if (!sesionValida(req)) return responder(res, 401, { error: "Sesión vencida" });
+        const { id } = jsonDe(await leerCuerpo(req, 1024)) || {};
+        const r = leerResenas();
+        const resena = r.lista.find(x => x.id === id);
+        if (!resena) return responder(res, 404, { error: "Esa reseña ya no existe" });
+        if (url.pathname.endsWith("aprobar")) resena.aprobada = true;
+        else r.lista = r.lista.filter(x => x !== resena);
+        guardarResenas(r);
+        return responder(res, 200, { ok: true });
       }
 
       if (url.pathname === "/api/login" && req.method === "POST") {
@@ -291,10 +357,11 @@ const servidor = http.createServer(async (req, res) => {
         const datos = limpiarDatos(jsonDe(await leerCuerpo(req, 2 * 1024 * 1024)));
         if (!datos) return responder(res, 400, { error: "Datos inválidos" });
         datos.actualizado = Date.now();
-        // se guarda primero en un archivo temporal para no dañar datos.json si algo falla
-        fs.writeFileSync(DATOS + ".tmp", JSON.stringify(datos, null, 2));
-        fs.renameSync(DATOS + ".tmp", DATOS);
+        guardarJSON(DATOS, datos);
         limpiarFotos(datos);
+        // si se eliminó un libro, sus reseñas se van con él
+        const ids = new Set(datos.libros.map(l => l.id)), r = leerResenas();
+        if (r.lista.some(x => !ids.has(x.libroId))) { r.lista = r.lista.filter(x => ids.has(x.libroId)); guardarResenas(r); }
         return responder(res, 200, { ok: true, actualizado: datos.actualizado });
       }
 
