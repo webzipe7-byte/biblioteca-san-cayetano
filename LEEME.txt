@@ -62,3 +62,5 @@ ARCHIVOS
   config.json -> clave del panel (solo en el computador, no se sube)
   render.yaml, package.json -> configuración para publicar en internet
   fotos/      -> fotos subidas desde el panel
+  test/       -> pruebas del servidor (se corren con: npm test)
+  CLAUDE.md   -> reglas para programar el proyecto (de andrej-karpathy-skills-main)
