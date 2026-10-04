@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel de Ejecutivos - Biblioteca San Cayetano</title>
+<script>
+  try { if (localStorage.getItem("temaPanel") === "oscuro") document.documentElement.dataset.tema = "oscuro"; } catch {}
+</script>
 <style>
   :root {
     --azul: #2f7fe0;
@@ -16,9 +19,28 @@
     --rojo: #c0392b;
     --rojo-claro: #fde8e8;
     --verde: #1e8e4e;
+    --suave: #555;            /* textos secundarios */
+    --naranja: #a06000;
+    --amarillo-claro: #fffaf0;
+    --azul-hover: #d3e5fc;
+  }
+  /* Tema oscuro (botón "Tema"): se invierten fondo y letra */
+  :root[data-tema="oscuro"] {
+    --negro: #e6ebf2;
+    --blanco: #171c26;
+    --gris: #0e1219;
+    --borde: #2c3646;
+    --azul-claro: #172840;
+    --rojo-claro: #3b1f1f;
+    --suave: #a9b4c4;
+    --naranja: #e8a84a;
+    --amarillo-claro: #2a2414;
+    --azul-hover: #1d3557;
+    --azul-oscuro: #8bbcff;   /* textos azules: más claros para leerse sobre negro */
+    color-scheme: dark;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: "Segoe UI", Arial, sans-serif; color: var(--negro); background: var(--gris); min-height: 100vh; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: var(--negro); background: var(--gris); min-height: 100vh; transition: background .3s, color .3s; }
   button, input, select, textarea { font: inherit; color: inherit; }
   button { cursor: pointer; }
   [hidden] { display: none !important; }
@@ -31,10 +53,10 @@
   }
   .btn:hover { border-color: var(--azul); color: var(--azul); }
   .btn:active { transform: scale(.96); }
-  .btn.primario { background: var(--azul); border-color: var(--azul); color: var(--blanco); }
-  .btn.primario:hover { background: var(--azul-oscuro); border-color: var(--azul-oscuro); color: var(--blanco); }
+  .btn.primario { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .btn.primario:hover { background: #1c5fb8; border-color: #1c5fb8; color: #fff; }
   .btn.peligro { border-color: var(--rojo); color: var(--rojo); }
-  .btn.peligro:hover { background: var(--rojo); color: var(--blanco); }
+  .btn.peligro:hover { background: var(--rojo); color: #fff; }
   .btn.chico { padding: 5px 10px; font-size: .85rem; }
 
   /* ---------- Ingreso ---------- */
@@ -47,7 +69,7 @@
   @keyframes subir { from { opacity: 0; transform: translateY(20px); } }
   .caja-ingreso img { width: 90px; height: 90px; margin-bottom: 12px; }
   .caja-ingreso h1 { font-size: 1.5rem; }
-  .caja-ingreso p { color: #555; margin: 6px 0 20px; font-size: .95rem; }
+  .caja-ingreso p { color: var(--suave); margin: 6px 0 20px; font-size: .95rem; }
   .caja-ingreso input { width: 100%; padding: 12px; border: 2px solid var(--negro); margin-bottom: 12px; font-size: 1rem; text-align: center; }
   .caja-ingreso input:focus { outline: none; border-color: var(--azul); }
   .caja-ingreso .btn { width: 100%; justify-content: center; padding: 12px; }
@@ -61,7 +83,9 @@
   }
   .top img { width: 46px; height: 46px; }
   .top h1 { font-size: 1.25rem; flex: 1; }
-  .top h1 small { display: block; font-size: .75rem; color: #555; font-weight: 600; letter-spacing: 1px; }
+  .acciones-top { display: flex; gap: 8px; }
+  .boton-tema { position: absolute; top: 14px; right: 14px; }
+  .top h1 small { display: block; font-size: .75rem; color: var(--suave); font-weight: 600; letter-spacing: 1px; }
 
   .contenedor { max-width: 1150px; margin: 0 auto; padding: 24px; }
 
@@ -75,20 +99,20 @@
   .dato { background: var(--blanco); border: 2px solid var(--negro); padding: 14px 16px; }
   .dato b { display: block; font-size: 2rem; color: var(--azul); line-height: 1.1; }
   .dato:nth-child(4) b { color: var(--negro); }
-  .dato span { font-size: .85rem; color: #444; font-weight: 600; }
+  .dato span { font-size: .85rem; color: var(--suave); font-weight: 600; }
 
   /* Pestañas */
   .pestanas { display: flex; gap: 0; border-bottom: 3px solid var(--negro); margin-bottom: 0; }
   .pestana {
     padding: 12px 20px; border: 3px solid transparent; border-bottom: none;
-    background: none; font-weight: 700; font-size: 1rem; color: #555; margin-bottom: -3px;
+    background: none; font-weight: 700; font-size: 1rem; color: var(--suave); margin-bottom: -3px;
   }
   .pestana.activa { background: var(--blanco); border-color: var(--negro); color: var(--azul); }
   .panel { background: var(--blanco); border: 3px solid var(--negro); border-top: none; padding: 22px; }
 
   /* ---------- Lista de libros ---------- */
   .acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-  .acciones input { flex: 1 1 240px; padding: 10px 12px; border: 2px solid var(--negro); }
+  .acciones input { flex: 1 1 240px; padding: 10px 12px; border: 2px solid var(--negro); background: var(--blanco); }
   .acciones input:focus { outline: none; border-color: var(--azul); }
 
   .fila {
@@ -96,33 +120,33 @@
     padding: 12px 6px; border-bottom: 1px solid var(--borde);
     animation: subir .3s ease-out both;
   }
-  .fila.encabezado { font-size: .78rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .5px; padding-top: 0; animation: none; }
+  .fila.encabezado { font-size: .78rem; font-weight: 700; color: var(--suave); text-transform: uppercase; letter-spacing: .5px; padding-top: 0; animation: none; }
   .mini {
     width: 56px; aspect-ratio: 2/3; border: 2px solid var(--negro);
-    display: grid; place-items: center; font-size: 1.4rem; overflow: hidden; color: var(--blanco);
+    display: grid; place-items: center; font-size: 1.4rem; overflow: hidden; color: #fff;
   }
   .mini img { width: 100%; height: 100%; object-fit: cover; }
   .fila h3 { font-size: 1rem; }
-  .fila p { font-size: .85rem; color: #555; }
+  .fila p { font-size: .85rem; color: var(--suave); }
   .etiqueta { display: inline-block; padding: 3px 10px; border-radius: 12px; background: var(--azul-claro); color: var(--azul-oscuro); font-size: .8rem; font-weight: 700; }
-  .sin-foto { font-size: .72rem; color: #a06000; font-weight: 600; }
+  .sin-foto { font-size: .72rem; color: var(--naranja); font-weight: 600; }
 
   .contador { display: flex; align-items: center; gap: 6px; }
   .contador button {
     width: 32px; height: 32px; border: 2px solid var(--negro); background: var(--blanco);
     font-weight: 800; font-size: 1.1rem; border-radius: 50%;
   }
-  .contador button:hover:not(:disabled) { background: var(--azul); border-color: var(--azul); color: var(--blanco); }
+  .contador button:hover:not(:disabled) { background: var(--azul); border-color: var(--azul); color: #fff; }
   .contador button:disabled { opacity: .3; cursor: not-allowed; }
   .contador .cant { min-width: 58px; text-align: center; font-weight: 700; }
   .contador .cant.cero { color: var(--rojo); }
   .botones { display: flex; gap: 6px; }
-  .vacio { padding: 30px; text-align: center; color: #666; }
+  .vacio { padding: 30px; text-align: center; color: var(--suave); }
 
   /* ---------- Reseñas ---------- */
   .globo {
     display: inline-block; min-width: 22px; padding: 1px 6px; margin-left: 4px;
-    border-radius: 11px; background: var(--rojo); color: var(--blanco);
+    border-radius: 11px; background: var(--rojo); color: #fff;
     font-size: .78rem; text-align: center;
     animation: pulso 1.6s ease-in-out infinite;
   }
@@ -134,11 +158,11 @@
     padding: 12px 6px; border-bottom: 1px solid var(--borde);
     animation: subir .3s ease-out both;
   }
-  .resena.espera { background: #fffaf0; border-left: 4px solid #f5b301; padding-left: 12px; }
+  .resena.espera { background: var(--amarillo-claro); border-left: 4px solid #f5b301; padding-left: 12px; }
   .resena h3 { font-size: .95rem; }
   .resena .estrellas { color: #f5b301; letter-spacing: 1px; }
   .resena p { font-size: .92rem; overflow-wrap: anywhere; }
-  .resena small { color: #555; font-weight: 600; }
+  .resena small { color: var(--suave); font-weight: 600; }
   .resena .botones { grid-row: 1 / span 3; grid-column: 2; align-self: center; }
 
   /* ---------- Editor de libro ---------- */
@@ -167,7 +191,7 @@
   .campo.ancho { grid-column: 1 / -1; }
   .campo label { font-weight: 600; font-size: .9rem; }
   .campo label em { color: var(--rojo); font-style: normal; }
-  .campo small { color: #666; font-size: .78rem; }
+  .campo small { color: var(--suave); font-size: .78rem; }
   .campo input, .campo select, .campo textarea {
     padding: 9px 11px; border: 2px solid var(--borde); background: var(--blanco); width: 100%;
   }
@@ -181,20 +205,20 @@
     border: 3px dashed var(--azul); background: var(--azul-claro);
     padding: 18px; text-align: center; cursor: pointer; transition: background .2s, border-color .2s;
   }
-  .zona-foto:hover, .zona-foto.encima { background: #d3e5fc; border-color: var(--azul-oscuro); }
+  .zona-foto:hover, .zona-foto.encima { background: var(--azul-hover); border-color: var(--azul-oscuro); }
   .zona-foto .grande { font-size: 2rem; }
   .zona-foto b { display: block; margin: 4px 0; }
-  .zona-foto small { color: #555; }
+  .zona-foto small { color: var(--suave); }
   .foto-actual { display: flex; gap: 14px; align-items: center; }
   .foto-actual img { width: 80px; aspect-ratio: 2/3; object-fit: cover; border: 2px solid var(--negro); }
   .subiendo { color: var(--azul-oscuro); font-weight: 600; font-size: .9rem; margin-top: 6px; }
 
   /* Vista previa: cómo lo verá el estudiante */
-  .vista h4 { font-size: .85rem; color: #555; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+  .vista h4 { font-size: .85rem; color: var(--suave); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
   .vista-tarjeta { border: 3px solid var(--negro); position: sticky; top: 90px; }
   .portada {
     aspect-ratio: 2/3; display: flex; flex-direction: column; justify-content: center; align-items: center;
-    text-align: center; padding: 12px; color: var(--blanco); border-bottom: 3px solid var(--negro);
+    text-align: center; padding: 12px; color: #fff; border-bottom: 3px solid var(--negro);
     position: relative; overflow: hidden;
   }
   .portada.con-foto { padding: 0; }
@@ -204,7 +228,7 @@
   .portada .a { font-size: .75rem; margin-top: 6px; opacity: .9; }
   .vista-info { padding: 8px 10px; }
   .vista-info h3 { font-size: .9rem; }
-  .vista-info p { font-size: .78rem; color: #555; }
+  .vista-info p { font-size: .78rem; color: var(--suave); }
   .disp { display: inline-block; margin-top: 5px; font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
   .disp.si { background: var(--azul-claro); color: var(--azul-oscuro); }
   .disp.no { background: var(--rojo-claro); color: var(--rojo); }
@@ -213,7 +237,7 @@
   .seccion-form { border: 2px solid var(--borde); padding: 18px; margin-bottom: 18px; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px 6px 14px; background: var(--azul-claro); border: 2px solid var(--azul); font-weight: 600; border-radius: 20px; }
-  .chip small { color: #555; font-weight: 400; }
+  .chip small { color: var(--suave); font-weight: 400; }
   .chip button { border: none; background: var(--blanco); width: 22px; height: 22px; border-radius: 50%; font-weight: 800; color: var(--rojo); }
   .agregar-cat { display: flex; gap: 8px; max-width: 420px; }
   .agregar-cat input { flex: 1; padding: 9px 11px; border: 2px solid var(--borde); }
@@ -221,7 +245,7 @@
     position: sticky; bottom: 0; background: var(--blanco); border-top: 3px solid var(--negro);
     margin: 0 -22px -22px; padding: 14px 22px; display: flex; gap: 12px; align-items: center; justify-content: flex-end;
   }
-  .pendiente { color: #a06000; font-weight: 700; margin-right: auto; }
+  .pendiente { color: var(--naranja); font-weight: 700; margin-right: auto; }
 
   /* Aviso flotante */
   .aviso {
@@ -234,9 +258,14 @@
 
   @media (max-width: 860px) {
     .resumen { grid-template-columns: repeat(2, 1fr); }
-    .fila { grid-template-columns: 56px 1fr; }
+    /* cada libro: portada a la izquierda, datos al lado y abajo los botones en una sola línea */
+    .fila { grid-template-columns: 52px 1fr auto; grid-template-areas: "mini info info" "mini cat cat" "cont cont btn"; gap: 4px 12px; }
     .fila.encabezado { display: none; }
-    .fila > .col-cat, .fila > .contador, .fila > .botones { grid-column: 2; }
+    .fila > .mini { grid-area: mini; width: 52px; }
+    .fila > div:nth-child(2) { grid-area: info; }
+    .fila > .col-cat { grid-area: cat; }
+    .fila > .contador { grid-area: cont; margin-top: 6px; }
+    .fila > .botones { grid-area: btn; margin-top: 6px; align-self: center; }
     .resena { grid-template-columns: 1fr; }
     .resena .botones { grid-row: auto; grid-column: 1; }
     .editor-cuerpo { grid-template-columns: 1fr; }
@@ -244,15 +273,29 @@
     .vista-tarjeta { width: 140px; position: static; }
   }
   @media (max-width: 560px) {
-    .top { padding: 10px 14px; }
+    /* la barra de arriba no se queda pegada (ocupa mucho); las pestañas sí */
+    .top { position: static; padding: 10px 14px; gap: 10px; }
+    .top img { width: 40px; height: 40px; }
     .top h1 { font-size: 1.05rem; }
-    .top .btn { padding: 7px 10px; font-size: .85rem; }
+    .top h1 small { font-size: .62rem; }
+    .acciones-top { flex: 1 1 100%; }
+    .acciones-top .btn { flex: 1; justify-content: center; padding: 8px 6px; font-size: .85rem; }
+    .ayuda { padding: 10px 12px; font-size: .86rem; margin-bottom: 14px; }
+    .resumen { grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 14px; }
+    .dato { padding: 8px 4px; text-align: center; }
+    .dato b { font-size: 1.4rem; }
+    .dato span { display: block; font-size: .68rem; line-height: 1.2; }
+    .pestanas { position: sticky; top: 0; z-index: 15; background: var(--gris); }
+    .pestana { flex: 1; padding: 10px 4px; font-size: .88rem; }
+    .acciones { margin-bottom: 10px; }
+    .acciones .btn { flex: 1; justify-content: center; }
+    .contador button { width: 38px; height: 38px; }
+    .resena .botones .btn { flex: 1; justify-content: center; }
+    .vista-tarjeta { width: 110px; }
     .contenedor { padding: 14px; }
     .panel { padding: 14px; }
     .barra-guardar { margin: 0 -14px -14px; padding: 12px 14px; }
     .campos { grid-template-columns: 1fr; }
-    .pestana { padding: 10px 12px; font-size: .92rem; }
-    .dato b { font-size: 1.6rem; }
     .editor-cuerpo, .editor-cab, .editor-pie { padding-left: 16px; padding-right: 16px; }
     .editor-pie { gap: 6px; }
     .largo { display: none; }
@@ -267,6 +310,7 @@
 
 <!-- ===== Ingreso con clave ===== -->
 <section id="ingreso">
+  <button class="btn chico boton-tema" type="button" data-cambiar-tema>🌙 Tema</button>
   <form class="caja-ingreso" id="formIngreso">
     <img src="logo.png" alt="Escudo Colegio San Cayetano">
     <h1>Panel de Ejecutivos</h1>
@@ -282,8 +326,11 @@
   <header class="top">
     <img src="logo.png" alt="">
     <h1>Panel de Ejecutivos<small>BIBLIOTECA · COLEGIO SAN CAYETANO</small></h1>
-    <a class="btn" href="/" target="_blank" rel="noopener">👁️ Ver página de estudiantes</a>
-    <button class="btn" id="salir">Salir</button>
+    <div class="acciones-top">
+      <a class="btn" href="/" target="_blank" rel="noopener">👁️ Ver página<span class="largo"> de estudiantes</span></a>
+      <button class="btn" type="button" data-cambiar-tema>🌙 Tema</button>
+      <button class="btn" id="salir">Salir</button>
+    </div>
   </header>
 
   <div class="contenedor">
@@ -292,15 +339,15 @@
     </div>
 
     <div class="resumen">
-      <div class="dato"><b id="nTitulos">0</b><span>Títulos en el catálogo</span></div>
-      <div class="dato"><b id="nEjemplares">0</b><span>Ejemplares en total</span></div>
-      <div class="dato"><b id="nDisponibles">0</b><span>Disponibles para préstamo</span></div>
-      <div class="dato"><b id="nPrestados">0</b><span>Prestados ahora</span></div>
+      <div class="dato"><b id="nTitulos">0</b><span>Títulos<span class="largo"> en el catálogo</span></span></div>
+      <div class="dato"><b id="nEjemplares">0</b><span>Ejemplares<span class="largo"> en total</span></span></div>
+      <div class="dato"><b id="nDisponibles">0</b><span>Disponibles<span class="largo"> para préstamo</span></span></div>
+      <div class="dato"><b id="nPrestados">0</b><span>Prestados<span class="largo"> ahora</span></span></div>
     </div>
 
     <nav class="pestanas">
       <button class="pestana activa" data-p="libros">📚 Libros</button>
-      <button class="pestana" data-p="pagina">🎨 Textos de la página</button>
+      <button class="pestana" data-p="pagina">🎨 Textos<span class="largo"> de la página</span></button>
       <button class="pestana" data-p="resenas">⭐ Reseñas<span class="globo" id="nPendientes" hidden></span></button>
     </nav>
 
@@ -483,6 +530,23 @@
       return false;
     }
   }
+
+  // ---------- Tema claro / oscuro ----------
+  function pintarBotonesTema() {
+    const oscuro = document.documentElement.dataset.tema === "oscuro";
+    document.querySelectorAll("[data-cambiar-tema]").forEach(b => {
+      b.textContent = oscuro ? "☀️ Tema" : "🌙 Tema";
+      b.title = oscuro ? "Cambiar a fondo blanco" : "Cambiar a fondo negro";
+    });
+  }
+  document.querySelectorAll("[data-cambiar-tema]").forEach(b => b.addEventListener("click", () => {
+    const oscuro = document.documentElement.dataset.tema !== "oscuro";
+    if (oscuro) document.documentElement.dataset.tema = "oscuro";
+    else delete document.documentElement.dataset.tema;
+    try { localStorage.setItem("temaPanel", oscuro ? "oscuro" : "claro"); } catch {}
+    pintarBotonesTema();
+  }));
+  pintarBotonesTema();
 
   // ---------- Ingreso ----------
   async function entrar(c) {
@@ -767,7 +831,7 @@
     $("chips").innerHTML = catsForm.map((c, i) => {
       const n = datos.libros.filter(l => l.categoria === c).length;
       return `<span class="chip">${esc(c)} <small>(${n})</small><button type="button" data-i="${i}" title="Quitar">×</button></span>`;
-    }).join("") || '<span style="color:#666">No hay categorías.</span>';
+    }).join("") || '<span style="color:var(--suave)">No hay categorías.</span>';
   }
   $("chips").addEventListener("click", e => {
     const b = e.target.closest("button[data-i]");

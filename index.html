@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Biblioteca Virtual - Colegio San Cayetano</title>
+<script>
+  try { if (localStorage.getItem("temaEstudiantes") === "oscuro") document.documentElement.dataset.tema = "oscuro"; } catch {}
+</script>
 <style>
   :root {
     --azul: #2f7fe0;         /* azul del escudo */
@@ -12,6 +15,31 @@
     --negro: #111111;
     --blanco: #ffffff;
     --cuadricula: #e3ebf7;
+    --fondo: #f7faff;
+    --suave: #555;              /* textos secundarios */
+    --punteado: #c5d6ee;
+    --rojo: #c0392b;
+    --rojo-claro: #fde8e8;
+    --amarillo-claro: #fff4d1;
+    --amarillo-texto: #8a6400;
+    --estrella-apagada: #d5dbe5;
+  }
+  /* Tema oscuro (botón "Tema"): se invierten fondo y letra */
+  :root[data-tema="oscuro"] {
+    --azul-oscuro: #8bbcff;     /* textos azules: más claros para leerse sobre negro */
+    --azul-claro: #172840;
+    --negro: #e6ebf2;
+    --blanco: #171c26;
+    --cuadricula: #1a2130;
+    --fondo: #0e1219;
+    --suave: #a9b4c4;
+    --punteado: #2c3646;
+    --rojo: #ff7b6b;
+    --rojo-claro: #3b1f1f;
+    --amarillo-claro: #3a3015;
+    --amarillo-texto: #f0c050;
+    --estrella-apagada: #3a4456;
+    color-scheme: dark;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,7 +47,8 @@
   body {
     font-family: "Segoe UI", Arial, sans-serif;
     color: var(--negro);
-    background-color: #f7faff;
+    background-color: var(--fondo);
+    transition: background-color .3s, color .3s;
     background-image:
       linear-gradient(var(--cuadricula) 1px, transparent 1px),
       linear-gradient(90deg, var(--cuadricula) 1px, transparent 1px);
@@ -107,8 +136,19 @@
   .redes a:nth-child(1) { animation-delay: .6s; }
   .redes a:nth-child(2) { animation-delay: .75s; }
   .redes a:nth-child(3) { animation-delay: .9s; }
-  .redes a:hover { background: var(--azul); border-color: var(--azul); color: var(--blanco); transform: translateY(-4px) rotate(10deg) scale(1.1); }
+  .redes a:hover, .boton-tema:hover { background: var(--azul); border-color: var(--azul); color: #fff; transform: translateY(-4px) rotate(10deg) scale(1.1); }
   .redes svg { width: 20px; height: 20px; fill: currentColor; }
+  .lado-derecho { display: flex; align-items: center; gap: 10px; }
+  .boton-tema {
+    height: 44px; padding: 0 14px;
+    border: 3px solid var(--negro); border-radius: 22px;
+    background: var(--blanco); color: var(--negro);
+    font: inherit; font-weight: 700; font-size: .95rem;
+    cursor: pointer;
+    transition: background .25s, color .25s, border-color .25s, transform .25s;
+    animation: rebote .6s 1.05s ease-out both;
+  }
+  .boton-tema:hover { transform: translateY(-4px) scale(1.05); }
   @keyframes rebote {
     0% { transform: scale(0); opacity: 0; }
     60% { transform: scale(1.25); opacity: 1; }
@@ -121,7 +161,7 @@
     margin: 32px auto 0;
     padding: 28px 32px;
     background: var(--azul);
-    color: var(--blanco);
+    color: #fff;
     border: 3px solid var(--negro);
     position: relative;
     overflow: hidden;
@@ -179,6 +219,7 @@
     flex: 1 1 260px;
     padding: 10px 14px;
     border: 2px solid var(--negro);
+    background: var(--blanco);
     font-size: 1rem;
     outline: none;
     transition: border-color .25s, box-shadow .25s;
@@ -196,7 +237,7 @@
   }
   .filtro:hover { transform: translateY(-2px); border-color: var(--azul); color: var(--azul); }
   .filtro:active { transform: scale(.94); }
-  .filtro.activo { background: var(--azul); color: var(--blanco); border-color: var(--azul); }
+  .filtro.activo { background: var(--azul); color: #fff; border-color: var(--azul); }
 
   .catalogo {
     display: grid;
@@ -229,7 +270,7 @@
     align-items: center;
     text-align: center;
     padding: 14px;
-    color: var(--blanco);
+    color: #fff;
     border-bottom: 3px solid var(--negro);
     position: relative;
     overflow: hidden;
@@ -272,14 +313,14 @@
 
   .info { padding: 10px 12px; }
   .info h3 { font-size: .98rem; margin-bottom: 3px; }
-  .info p { font-size: .82rem; color: #555; }
+  .info p { font-size: .82rem; color: var(--suave); }
   .info .disp {
     display: inline-block; margin-top: 6px;
     font-size: .72rem; font-weight: 700;
     padding: 2px 8px; border-radius: 10px;
   }
   .disp.si { background: var(--azul-claro); color: var(--azul-oscuro); }
-  .disp.no { background: #fde8e8; color: #c0392b; }
+  .disp.no { background: var(--rojo-claro); color: var(--rojo); }
   .disp.si::before {
     content: ""; display: inline-block;
     width: 7px; height: 7px; border-radius: 50%;
@@ -288,7 +329,7 @@
   }
   @keyframes latido { 50% { transform: scale(1.6); opacity: .5; } }
 
-  .vacio { text-align: center; padding: 40px; color: #777; display: none; animation: aparecerArriba .4s; }
+  .vacio { text-align: center; padding: 40px; color: var(--suave); display: none; animation: aparecerArriba .4s; }
 
   /* ---------- Ventana de descripción ---------- */
   .modal-fondo {
@@ -358,7 +399,7 @@
   }
   .cifra .num { display: block; font-size: 1.9rem; font-weight: 800; color: var(--azul); line-height: 1.1; }
   .cifra:nth-child(2) .num { color: var(--negro); }
-  .cifra small { font-size: .72rem; font-weight: 600; color: #444; }
+  .cifra small { font-size: .72rem; font-weight: 600; color: var(--suave); }
   .barra-unidades {
     height: 12px; margin-top: 12px;
     background: var(--blanco);
@@ -375,10 +416,10 @@
   }
   @keyframes rayas { to { background-position: 22px 0; } }
   .nota { font-size: .85rem; margin-top: 8px; }
-  .unidades.agotado { border-color: #c0392b; background: #fde8e8; }
-  .unidades.agotado h4 { color: #c0392b; }
-  .unidades.agotado .cifra:first-child .num { color: #c0392b; }
-  .datos li { padding: 5px 0; border-top: 1px dashed #c5d6ee; }
+  .unidades.agotado { border-color: var(--rojo); background: var(--rojo-claro); }
+  .unidades.agotado h4 { color: var(--rojo); }
+  .unidades.agotado .cifra:first-child .num { color: var(--rojo); }
+  .datos li { padding: 5px 0; border-top: 1px dashed var(--punteado); }
   .datos b { display: inline-block; width: 110px; }
 
   /* la ✕ se queda a la vista aunque se baje dentro de la ventana */
@@ -392,9 +433,9 @@
     font-size: 1.1rem; font-weight: 700;
     transition: background .25s, color .25s, border-color .25s, transform .3s;
   }
-  .cerrar:hover { background: var(--azul); color: var(--blanco); border-color: var(--azul); transform: rotate(90deg); }
+  .cerrar:hover { background: var(--azul); color: #fff; border-color: var(--azul); transform: rotate(90deg); }
 
-  footer { text-align: center; padding: 20px; font-size: .9rem; color: #444; }
+  footer { text-align: center; padding: 20px; font-size: .9rem; color: var(--suave); }
   footer span { color: var(--azul); font-weight: 700; }
 
   /* ---------- Barra de avance al bajar por la página ---------- */
@@ -426,12 +467,12 @@
 
   /* ---------- Estrellas ---------- */
   .estrellas { color: #f5b301; letter-spacing: 1px; white-space: nowrap; }
-  .estrellas .apagada { color: #d5dbe5; }
+  .estrellas .apagada { color: var(--estrella-apagada); }
   .nota-estrellas {
     display: inline-block; margin: 6px 0 0 4px;
     font-size: .72rem; font-weight: 700;
     padding: 2px 8px; border-radius: 10px;
-    background: #fff4d1; color: #8a6400;
+    background: var(--amarillo-claro); color: var(--amarillo-texto);
     animation: rebote .5s .9s ease-out both;
   }
 
@@ -446,7 +487,7 @@
   }
   .resenas h2 { font-size: 1.3rem; }
   .resenas h2 span { color: var(--azul); }
-  .resenas > p { color: #555; margin: 4px 0 22px; transition-delay: .1s; }
+  .resenas > p { color: var(--suave); margin: 4px 0 22px; transition-delay: .1s; }
   .lista-resenas {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -483,16 +524,16 @@
   .tarjeta-resena.visible .estrellas span:nth-child(5) { animation-delay: .32s; }
   @keyframes encender { from { transform: scale(0) rotate(-120deg); opacity: 0; } 70% { transform: scale(1.4); } }
   .tarjeta-resena p { line-height: 1.5; font-size: .95rem; overflow-wrap: anywhere; }
-  .tarjeta-resena .quien { margin-top: 10px; font-size: .82rem; color: #555; font-weight: 600; }
-  .sin-resenas { color: #666; padding: 10px 0; }
+  .tarjeta-resena .quien { margin-top: 10px; font-size: .82rem; color: var(--suave); font-weight: 600; }
+  .sin-resenas { color: var(--suave); padding: 10px 0; }
 
   /* ---------- Reseñas dentro de la ventana del libro ---------- */
   .opiniones { margin-top: 16px; padding-top: 14px; border-top: 3px solid var(--negro); }
   .modal-fondo.abierto .opiniones { animation: deslizar .45s .6s ease-out both; }
   .opiniones h4 { font-size: 1rem; margin-bottom: 8px; }
-  .opiniones h4 span { font-weight: 600; color: #555; font-size: .9rem; }
-  .opinion { padding: 8px 0; border-bottom: 1px dashed #c5d6ee; font-size: .9rem; overflow-wrap: anywhere; }
-  .opinion small { color: #555; font-weight: 600; }
+  .opiniones h4 span { font-weight: 600; color: var(--suave); font-size: .9rem; }
+  .opinion { padding: 8px 0; border-bottom: 1px dashed var(--punteado); font-size: .9rem; overflow-wrap: anywhere; }
+  .opinion small { color: var(--suave); font-weight: 600; }
   .form-resena {
     display: grid; gap: 8px;
     margin-top: 12px; padding: 14px;
@@ -502,6 +543,7 @@
   .form-resena input, .form-resena textarea {
     width: 100%; padding: 8px 10px;
     border: 2px solid var(--negro);
+    background: var(--blanco);
     font: inherit; font-size: .92rem;
     outline: none;
     transition: border-color .25s, box-shadow .25s;
@@ -513,13 +555,13 @@
   .elegir-estrellas button {
     border: none; background: none; cursor: pointer;
     font-size: 1.9rem; line-height: 1;
-    color: #c9d3e2;
+    color: var(--estrella-apagada);
     transition: color .2s, transform .2s;
   }
   .elegir-estrellas button:hover, .elegir-estrellas button:focus-visible { transform: scale(1.3) rotate(-10deg); outline: none; }
   /* al pasar el mouse se iluminan esa estrella y las anteriores */
   .elegir-estrellas:hover button { color: #f5b301; }
-  .elegir-estrellas button:hover ~ button { color: #c9d3e2; }
+  .elegir-estrellas button:hover ~ button { color: var(--estrella-apagada); }
   .elegir-estrellas button.llena { color: #f5b301; }
   .elegir-estrellas button.salto { animation: salto .45s ease-out; }
   @keyframes salto { 40% { transform: scale(1.6) rotate(15deg); } }
@@ -527,17 +569,17 @@
     justify-self: start;
     padding: 9px 18px;
     border: 2px solid var(--azul);
-    background: var(--azul); color: var(--blanco);
+    background: var(--azul); color: #fff;
     font-weight: 700; font-size: .95rem;
     cursor: pointer;
     transition: background .25s, transform .15s;
   }
-  .enviar:hover { background: var(--azul-oscuro); }
+  .enviar:hover { background: #1c5fb8; }
   .enviar:active { transform: scale(.95); }
   .enviar:disabled { opacity: .6; cursor: wait; }
   .msj-resena { font-size: .88rem; font-weight: 600; min-height: 1.2em; }
   .msj-resena.bien { color: var(--azul-oscuro); animation: aparecerArriba .4s ease-out; }
-  .msj-resena.mal { color: #c0392b; animation: temblar .4s; }
+  .msj-resena.mal { color: var(--rojo); animation: temblar .4s; }
   @keyframes temblar { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 
   /* Lluvia de emojis al enviar la reseña */
@@ -562,13 +604,18 @@
 
   /* Celular */
   @media (max-width: 640px) {
-    header { position: relative; padding: 10px 14px; gap: 10px; }
-    .logo { width: 44px; height: 44px; }
-    .seccion { font-size: 1.2rem; }
-    .seccion small { font-size: .6rem; letter-spacing: 1px; }
-    .redes { gap: 6px; }
-    .redes a { width: 36px; height: 36px; border-width: 2px; }
-    .redes svg { width: 16px; height: 16px; }
+    /* escudo, redes y botón de tema caben en una sola línea */
+    header { position: relative; padding: 10px 14px; gap: 8px; }
+    .marca { gap: 8px; }
+    .logo { width: 40px; height: 40px; }
+    .seccion { font-size: 1.1rem; }
+    .seccion small { font-size: .56rem; letter-spacing: 1px; }
+    .redes { gap: 4px; }
+    .redes a { width: 32px; height: 32px; border-width: 2px; }
+    .redes svg { width: 15px; height: 15px; }
+    .lado-derecho { gap: 4px; }
+    .boton-tema { height: 32px; width: 32px; padding: 0; border-width: 2px; font-size: .85rem; }
+    .boton-tema .palabra { display: none; }
     .titulo { font-size: 1.05rem; padding: 6px 12px; }
     .barra { gap: 8px; }
     .filtro { flex: 1 1 auto; padding: 8px 10px; font-size: .88rem; }
@@ -597,6 +644,7 @@
     .libro:active { transform: scale(.97); box-shadow: 4px 4px 0 var(--azul); }
     .filtro:hover { transform: none; }
     .filtro:not(.activo):hover { border-color: var(--negro); color: var(--negro); }
+    .boton-tema:hover { transform: none; background: var(--blanco); border-color: var(--negro); color: var(--negro); }
   }
   * { -webkit-tap-highlight-color: transparent; }
 
@@ -617,6 +665,7 @@
     <div class="seccion"><span id="sSeccion">Estudiantes</span><small id="sSubtitulo">COLEGIO SAN CAYETANO</small></div>
   </div>
   <div class="titulo"><span id="sTitulo" style="color:inherit">Biblioteca</span> <span id="sTituloResaltado">Colegio San Cayetano</span></div>
+  <div class="lado-derecho">
   <nav class="redes" aria-label="Redes sociales">
     <a id="rFacebook" href="https://www.facebook.com" target="_blank" rel="noopener" title="Facebook" aria-label="Facebook">
       <svg viewBox="0 0 24 24"><path d="M14 8h3V4h-3c-2.8 0-5 2.2-5 5v2H7v4h2v7h4v-7h3l1-4h-4V9c0-.6.4-1 1-1z"/></svg>
@@ -628,6 +677,8 @@
       <svg viewBox="0 0 24 24"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.7 15.1V8.9L15.5 12l-5.8 3.1z"/></svg>
     </a>
   </nav>
+  <button class="boton-tema" id="tema" type="button"><span class="icono-tema">🌙</span><span class="palabra"> Tema</span></button>
+  </div>
 </header>
 
 <section class="banner">
@@ -950,6 +1001,23 @@
     }
     boton.disabled = false;
   });
+
+  // ---------- Tema claro / oscuro ----------
+  const botonTema = document.getElementById("tema");
+  function pintarBotonTema() {
+    const oscuro = document.documentElement.dataset.tema === "oscuro";
+    botonTema.querySelector(".icono-tema").textContent = oscuro ? "☀️" : "🌙";
+    botonTema.title = oscuro ? "Cambiar a fondo blanco" : "Cambiar a fondo negro";
+    botonTema.setAttribute("aria-label", botonTema.title);
+  }
+  botonTema.addEventListener("click", () => {
+    const oscuro = document.documentElement.dataset.tema !== "oscuro";
+    if (oscuro) document.documentElement.dataset.tema = "oscuro";
+    else delete document.documentElement.dataset.tema;
+    try { localStorage.setItem("temaEstudiantes", oscuro ? "oscuro" : "claro"); } catch {}
+    pintarBotonTema();
+  });
+  pintarBotonTema();
 
   // ---------- Animaciones ----------
   // Lluvia de emojis que sale del botón
