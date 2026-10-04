@@ -127,6 +127,16 @@
     overflow: hidden;
     animation: aparecerArriba .8s .4s ease-out both;
   }
+  .banner::before {
+    content: "";
+    position: absolute; inset: -50%;
+    background:
+      radial-gradient(circle at 30% 40%, rgba(255,255,255,.22), transparent 25%),
+      radial-gradient(circle at 70% 60%, rgba(17,17,17,.18), transparent 25%);
+    animation: luces 14s ease-in-out infinite alternate;
+  }
+  @keyframes luces { to { transform: translate(18%, -12%) rotate(25deg); } }
+  .banner h1, .banner p { position: relative; }
   .banner h1 { font-size: 1.9rem; margin-bottom: 6px; }
   .banner p { opacity: .95; max-width: 560px; }
   .banner .flotante {
@@ -202,10 +212,11 @@
     transition: transform .3s, box-shadow .3s, border-color .3s;
     animation: entrarLibro .55s ease-out both;
     perspective: 800px;
+    position: relative;
   }
   @keyframes entrarLibro { from { opacity: 0; transform: translateY(40px) scale(.9); } }
   .libro:hover {
-    transform: translateY(-8px);
+    transform: perspective(700px) translateY(-8px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
     box-shadow: 8px 8px 0 var(--azul);
     border-color: var(--azul);
   }
@@ -241,6 +252,16 @@
     transition: left .6s;
   }
   .libro:hover .portada::after { left: 130%; }
+  /* luz que sigue al mouse sobre la tarjeta */
+  .libro::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.45), transparent 55%);
+    opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none;
+  }
+  .libro:hover::after { opacity: 1; }
   /* Portada con foto subida desde el panel de ejecutivos */
   .portada.con-foto { padding: 0; background: #ddd !important; }
   .portada.con-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -360,8 +381,11 @@
   .datos li { padding: 5px 0; border-top: 1px dashed #c5d6ee; }
   .datos b { display: inline-block; width: 110px; }
 
+  /* la ✕ se queda a la vista aunque se baje dentro de la ventana */
   .cerrar {
-    position: absolute; top: 10px; right: 12px;
+    position: sticky; top: 0; z-index: 3;
+    order: 3; align-self: flex-start; flex-shrink: 0;
+    margin: -14px -14px 0 -14px;
     width: 34px; height: 34px;
     border: 2px solid var(--negro); border-radius: 50%;
     background: var(--blanco); cursor: pointer;
@@ -373,12 +397,167 @@
   footer { text-align: center; padding: 20px; font-size: .9rem; color: #444; }
   footer span { color: var(--azul); font-weight: 700; }
 
+  /* ---------- Barra de avance al bajar por la página ---------- */
+  .progreso {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--azul), #7fb6ff, var(--azul));
+    transform-origin: left;
+    transform: scaleX(0);
+    z-index: 60;
+  }
+
+  /* ---------- Aparecer al bajar (se activa desde el script) ---------- */
+  .revelar { opacity: 0; transform: translateY(35px) scale(.97); transition: opacity .6s ease-out, transform .6s ease-out; }
+  .revelar.visible { opacity: 1; transform: none; }
+
+  /* ---------- Onda al hacer clic en un botón ---------- */
+  .filtro, .enviar { position: relative; overflow: hidden; }
+  .onda {
+    position: absolute;
+    width: 20px; height: 20px; margin: -10px 0 0 -10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.6);
+    mix-blend-mode: difference;
+    pointer-events: none;
+    animation: onda .6s ease-out forwards;
+  }
+  @keyframes onda { to { transform: scale(14); opacity: 0; } }
+
+  /* ---------- Estrellas ---------- */
+  .estrellas { color: #f5b301; letter-spacing: 1px; white-space: nowrap; }
+  .estrellas .apagada { color: #d5dbe5; }
+  .nota-estrellas {
+    display: inline-block; margin: 6px 0 0 4px;
+    font-size: .72rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px;
+    background: #fff4d1; color: #8a6400;
+    animation: rebote .5s .9s ease-out both;
+  }
+
+  /* ---------- Sección de reseñas ---------- */
+  .resenas {
+    max-width: 1150px;
+    margin: 0 auto 36px;
+    padding: 32px;
+    background: var(--blanco);
+    border: 3px solid var(--negro);
+    border-top: 8px solid var(--azul);
+  }
+  .resenas h2 { font-size: 1.3rem; }
+  .resenas h2 span { color: var(--azul); }
+  .resenas > p { color: #555; margin: 4px 0 22px; transition-delay: .1s; }
+  .lista-resenas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 22px;
+  }
+  .tarjeta-resena {
+    border: 3px solid var(--negro);
+    padding: 18px 18px 14px;
+    cursor: pointer;
+    position: relative;
+    background: var(--blanco);
+  }
+  .tarjeta-resena.visible { transition: opacity .6s ease-out, transform .6s ease-out, box-shadow .3s, border-color .3s; }
+  .tarjeta-resena.visible:hover { transform: translateY(-6px) rotate(-1deg); box-shadow: 8px 8px 0 var(--azul); border-color: var(--azul); }
+  /* comillas grandes que entran girando */
+  .tarjeta-resena::before {
+    content: "“";
+    position: absolute; top: -26px; right: 12px;
+    font: 800 4.5rem Georgia, serif;
+    color: var(--azul);
+    background: var(--blanco);
+    line-height: 1; padding: 0 6px;
+    transform: scale(0) rotate(-90deg);
+    transition: transform .5s .35s cubic-bezier(.2,.9,.3,1.4);
+  }
+  .tarjeta-resena.visible::before { transform: none; }
+  .tarjeta-resena .libro-de { padding-right: 52px; font-size: .78rem; font-weight: 700; color: var(--azul); text-transform: uppercase; letter-spacing: .5px; }
+  .tarjeta-resena .estrellas { display: block; font-size: 1.15rem; margin: 4px 0 8px; }
+  /* las estrellas se encienden una por una */
+  .tarjeta-resena.visible .estrellas span { display: inline-block; animation: encender .4s ease-out both; }
+  .tarjeta-resena.visible .estrellas span:nth-child(2) { animation-delay: .08s; }
+  .tarjeta-resena.visible .estrellas span:nth-child(3) { animation-delay: .16s; }
+  .tarjeta-resena.visible .estrellas span:nth-child(4) { animation-delay: .24s; }
+  .tarjeta-resena.visible .estrellas span:nth-child(5) { animation-delay: .32s; }
+  @keyframes encender { from { transform: scale(0) rotate(-120deg); opacity: 0; } 70% { transform: scale(1.4); } }
+  .tarjeta-resena p { line-height: 1.5; font-size: .95rem; overflow-wrap: anywhere; }
+  .tarjeta-resena .quien { margin-top: 10px; font-size: .82rem; color: #555; font-weight: 600; }
+  .sin-resenas { color: #666; padding: 10px 0; }
+
+  /* ---------- Reseñas dentro de la ventana del libro ---------- */
+  .opiniones { margin-top: 16px; padding-top: 14px; border-top: 3px solid var(--negro); }
+  .modal-fondo.abierto .opiniones { animation: deslizar .45s .6s ease-out both; }
+  .opiniones h4 { font-size: 1rem; margin-bottom: 8px; }
+  .opiniones h4 span { font-weight: 600; color: #555; font-size: .9rem; }
+  .opinion { padding: 8px 0; border-bottom: 1px dashed #c5d6ee; font-size: .9rem; overflow-wrap: anywhere; }
+  .opinion small { color: #555; font-weight: 600; }
+  .form-resena {
+    display: grid; gap: 8px;
+    margin-top: 12px; padding: 14px;
+    background: var(--azul-claro);
+    border: 2px solid var(--azul);
+  }
+  .form-resena input, .form-resena textarea {
+    width: 100%; padding: 8px 10px;
+    border: 2px solid var(--negro);
+    font: inherit; font-size: .92rem;
+    outline: none;
+    transition: border-color .25s, box-shadow .25s;
+  }
+  .form-resena textarea { min-height: 70px; resize: vertical; }
+  .form-resena input:focus, .form-resena textarea:focus { border-color: var(--azul); box-shadow: 0 0 0 4px rgba(47,127,224,.2); }
+  .form-resena .trampa { position: absolute; left: -9999px; width: 1px; height: 1px; }
+  .elegir-estrellas { display: flex; gap: 2px; }
+  .elegir-estrellas button {
+    border: none; background: none; cursor: pointer;
+    font-size: 1.9rem; line-height: 1;
+    color: #c9d3e2;
+    transition: color .2s, transform .2s;
+  }
+  .elegir-estrellas button:hover, .elegir-estrellas button:focus-visible { transform: scale(1.3) rotate(-10deg); outline: none; }
+  /* al pasar el mouse se iluminan esa estrella y las anteriores */
+  .elegir-estrellas:hover button { color: #f5b301; }
+  .elegir-estrellas button:hover ~ button { color: #c9d3e2; }
+  .elegir-estrellas button.llena { color: #f5b301; }
+  .elegir-estrellas button.salto { animation: salto .45s ease-out; }
+  @keyframes salto { 40% { transform: scale(1.6) rotate(15deg); } }
+  .enviar {
+    justify-self: start;
+    padding: 9px 18px;
+    border: 2px solid var(--azul);
+    background: var(--azul); color: var(--blanco);
+    font-weight: 700; font-size: .95rem;
+    cursor: pointer;
+    transition: background .25s, transform .15s;
+  }
+  .enviar:hover { background: var(--azul-oscuro); }
+  .enviar:active { transform: scale(.95); }
+  .enviar:disabled { opacity: .6; cursor: wait; }
+  .msj-resena { font-size: .88rem; font-weight: 600; min-height: 1.2em; }
+  .msj-resena.bien { color: var(--azul-oscuro); animation: aparecerArriba .4s ease-out; }
+  .msj-resena.mal { color: #c0392b; animation: temblar .4s; }
+  @keyframes temblar { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+  /* Lluvia de emojis al enviar la reseña */
+  .chispa {
+    position: fixed; z-index: 70;
+    font-size: 1.4rem;
+    pointer-events: none;
+    animation: chispa 1.1s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+  @keyframes chispa {
+    to { transform: translate(var(--dx), var(--dy)) rotate(var(--giro)) scale(.4); opacity: 0; }
+  }
+
   /* Tablet */
   @media (max-width: 900px) {
     header { padding: 12px 20px; }
     .titulo { order: 3; flex: 1 1 100%; text-align: center; font-size: 1.3rem; }
     .banner { margin: 20px 20px 0; }
     main { margin: 0 20px 24px; padding: 24px; }
+    .resenas { margin: 0 20px 24px; padding: 24px; }
   }
 
   /* Celular */
@@ -397,9 +576,12 @@
     .banner h1 { font-size: 1.4rem; }
     .banner .flotante { display: none; }
     main { margin: 0 16px 16px; padding: 18px; }
+    .resenas { margin: 0 16px 16px; padding: 18px; }
+    .lista-resenas { grid-template-columns: 1fr; }
     .catalogo { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
     .modal { flex-direction: column; align-items: center; padding: 20px; }
     .modal .portada { width: 150px; }
+    .cerrar { order: -1; align-self: flex-end; margin: -8px -8px -40px 0; }
     .cifra .num { font-size: 1.5rem; }
     .cifra small { font-size: .66rem; }
   }
@@ -410,6 +592,8 @@
     .libro:hover { transform: none; box-shadow: none; border-color: var(--negro); }
     .libro:hover .portada { transform: none; }
     .libro:hover .portada .icono { transform: none; }
+    .libro:hover::after { opacity: 0; }
+    .tarjeta-resena.visible:hover { transform: none; box-shadow: none; border-color: var(--negro); }
     .libro:active { transform: scale(.97); box-shadow: 4px 4px 0 var(--azul); }
     .filtro:hover { transform: none; }
     .filtro:not(.activo):hover { border-color: var(--negro); color: var(--negro); }
@@ -419,10 +603,13 @@
   /* Respeta a quienes prefieren menos movimiento */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
+    .revelar, .tarjeta-resena::before { opacity: 1; transform: none; }
   }
 </style>
 </head>
 <body>
+
+<div class="progreso" id="progreso"></div>
 
 <header>
   <div class="marca">
@@ -462,6 +649,13 @@
   <p class="vacio" id="vacio">No se encontraron libros con esa búsqueda.</p>
 </main>
 
+<!-- Reseñas que escriben los estudiantes (aparecen cuando un ejecutivo las aprueba) -->
+<section class="resenas" id="resenas" hidden>
+  <h2 class="revelar">Lo que dicen los <span>estudiantes</span> ⭐</h2>
+  <p class="revelar">¿Ya leíste alguno? Abre el libro y deja tu reseña.</p>
+  <div class="lista-resenas" id="listaResenas"></div>
+</section>
+
 <footer id="sPie">© 2026 Biblioteca Virtual — <span>Colegio San Cayetano</span>, Cali · Fundación Manos Providentes</footer>
 
 <!-- Ventana con la información del libro -->
@@ -475,6 +669,23 @@
       <p class="desc" id="mDesc"></p>
       <ul class="datos" id="mDatos"></ul>
       <div class="unidades" id="mUnidades"></div>
+
+      <div class="opiniones" id="opiniones" hidden>
+        <h4>⭐ Reseñas <span id="mPromedio"></span></h4>
+        <div id="mResenas"></div>
+        <form class="form-resena" id="formResena">
+          <b>Escribe tu reseña</b>
+          <div class="elegir-estrellas" id="elegirEstrellas" role="radiogroup" aria-label="¿Cuántas estrellas le das?">
+            <button type="button" role="radio" data-n="1" aria-label="1 estrella">★</button><button type="button" role="radio" data-n="2" aria-label="2 estrellas">★</button><button type="button" role="radio" data-n="3" aria-label="3 estrellas">★</button><button type="button" role="radio" data-n="4" aria-label="4 estrellas">★</button><button type="button" role="radio" data-n="5" aria-label="5 estrellas">★</button>
+          </div>
+          <input name="nombre" maxlength="40" placeholder="Tu nombre y grado (ej: Sofía, 7°)" required>
+          <textarea name="texto" maxlength="500" placeholder="¿Qué te pareció el libro? ¿Se lo recomendarías a un amigo?" required></textarea>
+          <!-- campo trampa: las personas no lo ven, los robots lo llenan -->
+          <input name="web" class="trampa" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="enviar" type="submit">Enviar reseña</button>
+          <p class="msj-resena" id="msjResena"></p>
+        </form>
+      </div>
     </div>
   </div>
 </div>
@@ -551,6 +762,9 @@
   let categoria = "Todos";
   let categorias = ["Novela", "Infantil", "Clásico", "Ciencia"];
   let versionActual = 0;
+  let resenas = [];          // solo las aprobadas; llegan del servidor
+  let conServidor = false;
+  const sinMovimiento = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // Evita que un texto escrito en el panel se interprete como código HTML
   const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -565,6 +779,13 @@
               <div class="a">${esc(l.autor)}</div>
             </div>`;
   }
+
+  // ★★★★☆ (cada estrella en su propio span para animarlas una por una)
+  const estrellasHTML = n => `<span class="estrellas" aria-label="${n} de 5 estrellas">${
+    [1, 2, 3, 4, 5].map(i => `<span${i > n ? ' class="apagada"' : ""}>★</span>`).join("")}</span>`;
+  const resenasDe = l => resenas.filter(r => r.libroId === l.id);
+  const promedio = lista => (lista.reduce((s, r) => s + r.estrellas, 0) / lista.length).toFixed(1).replace(".0", "");
+  const fechaCorta = t => new Date(t).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
 
   function pintarFiltros() {
     if (categoria !== "Todos" && !categorias.includes(categoria)) categoria = "Todos";
@@ -587,6 +808,7 @@
           <h3>${esc(l.titulo)}</h3>
           <p>${esc(l.autor)}</p>
           <span class="disp ${l.disponibles ? "si" : "no"}">${l.disponibles ? esc(l.disponibles) + (l.disponibles == 1 ? " disponible" : " disponibles") : "Agotado"}</span>
+          ${resenasDe(l).length ? `<span class="nota-estrellas">★ ${promedio(resenasDe(l))}</span>` : ""}
         </div>
       </article>`).join("");
 
@@ -620,6 +842,7 @@
       </div>
       <div class="barra-unidades"><div class="relleno"></div></div>
       <p class="nota">${l.disponibles ? `Quedan <b>${l.disponibles}</b> de <b>${l.unidades}</b> ejemplares para préstamo.` : "Todos los ejemplares están prestados en este momento."}</p>`;
+    pintarOpiniones(l);
     fondo.classList.add("abierto");
 
     // los números cuentan desde 0 y la barra se llena
@@ -637,6 +860,159 @@
     }, 450);
   }
   function cerrar() { fondo.classList.remove("abierto"); }
+
+  // ---------- Reseñas ----------
+  const listaResenas = document.getElementById("listaResenas");
+  function pintarResenas() {
+    document.getElementById("resenas").hidden = !conServidor;
+    const ultimas = [...resenas].sort((a, b) => b.fecha - a.fecha).slice(0, 9);
+    listaResenas.innerHTML = ultimas.map(r => {
+      const l = libros.find(x => x.id === r.libroId);
+      return l ? `
+        <article class="tarjeta-resena revelar" data-libro="${esc(r.libroId)}" tabindex="0">
+          <div class="libro-de">📖 ${esc(l.titulo)}</div>
+          ${estrellasHTML(r.estrellas)}
+          <p>${esc(r.texto)}</p>
+          <div class="quien">— ${esc(r.nombre)} · ${fechaCorta(r.fecha)}</div>
+        </article>` : "";
+    }).join("") || '<p class="sin-resenas">Todavía no hay reseñas. ¡Abre un libro y sé el primero en contar qué te pareció!</p>';
+    // cada tarjeta entra un poco después de la anterior
+    listaResenas.querySelectorAll(".revelar").forEach((el, n) => el.style.transitionDelay = (n % 3) * 0.12 + "s");
+    observarRevelar();
+  }
+  function abrirResena(e) {
+    const t = e.target.closest(".tarjeta-resena");
+    if (t && (e.type === "click" || e.key === "Enter")) abrir(libros.findIndex(l => l.id === t.dataset.libro));
+  }
+  listaResenas.addEventListener("click", abrirResena);
+  listaResenas.addEventListener("keydown", abrirResena);
+
+  const formResena = document.getElementById("formResena");
+  const msjResena = document.getElementById("msjResena");
+  let libroAbierto = null, estrellasElegidas = 0;
+
+  function pintarOpiniones(l) {
+    libroAbierto = l;
+    document.getElementById("opiniones").hidden = !conServidor || !l.id;
+    const lista = resenasDe(l).sort((a, b) => b.fecha - a.fecha);
+    document.getElementById("mPromedio").textContent = lista.length
+      ? `· ${promedio(lista)} de 5 (${lista.length} ${lista.length === 1 ? "reseña" : "reseñas"})` : "";
+    document.getElementById("mResenas").innerHTML = lista.map(r => `
+      <div class="opinion">${estrellasHTML(r.estrellas)} ${esc(r.texto)}<br><small>— ${esc(r.nombre)} · ${fechaCorta(r.fecha)}</small></div>`).join("")
+      || '<p class="sin-resenas">Nadie ha escrito una reseña de este libro todavía.</p>';
+    formResena.reset();
+    elegirEstrellas(0);
+    msjResena.textContent = "";
+    msjResena.className = "msj-resena";
+  }
+
+  function elegirEstrellas(n) {
+    estrellasElegidas = n;
+    document.querySelectorAll("#elegirEstrellas button").forEach(b => {
+      b.classList.toggle("llena", +b.dataset.n <= n);
+      b.setAttribute("aria-checked", +b.dataset.n === n);
+    });
+  }
+  document.getElementById("elegirEstrellas").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    elegirEstrellas(+b.dataset.n);
+    b.classList.remove("salto"); void b.offsetWidth; b.classList.add("salto");
+  });
+
+  function avisoResena(texto, bien) {
+    msjResena.textContent = texto;
+    msjResena.className = "msj-resena";
+    void msjResena.offsetWidth; // reinicia la animación
+    msjResena.className = "msj-resena " + (bien ? "bien" : "mal");
+  }
+
+  formResena.addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = formResena.elements;
+    if (!estrellasElegidas) return avisoResena("Elige cuántas estrellas le das (de 1 a 5).");
+    const boton = formResena.querySelector(".enviar");
+    boton.disabled = true;
+    try {
+      const r = await fetch("/api/resenas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ libroId: libroAbierto.id, nombre: f.nombre.value, texto: f.texto.value, estrellas: estrellasElegidas, web: f.web.value }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || "No se pudo enviar. Intenta otra vez.");
+      formResena.reset();
+      elegirEstrellas(0);
+      avisoResena("¡Gracias! 🎉 Tu reseña aparecerá cuando la revise la biblioteca.", true);
+      lluviaDeEmojis(boton);
+    } catch (err) {
+      avisoResena(err instanceof TypeError ? "No hay conexión. Intenta otra vez." : err.message);
+    }
+    boton.disabled = false;
+  });
+
+  // ---------- Animaciones ----------
+  // Lluvia de emojis que sale del botón
+  function lluviaDeEmojis(desde) {
+    if (sinMovimiento) return;
+    const { left, top, width } = desde.getBoundingClientRect();
+    for (let i = 0; i < 18; i++) {
+      const c = document.createElement("span");
+      c.className = "chispa";
+      c.textContent = ["📚", "⭐", "✨", "📖", "💙"][i % 5];
+      c.style.left = left + width / 2 + "px";
+      c.style.top = top + "px";
+      const angulo = Math.random() * Math.PI * 2, distancia = 80 + Math.random() * 120;
+      c.style.setProperty("--dx", Math.cos(angulo) * distancia + "px");
+      c.style.setProperty("--dy", Math.sin(angulo) * distancia - 60 + "px");
+      c.style.setProperty("--giro", (Math.random() * 720 - 360) + "deg");
+      document.body.appendChild(c);
+      c.addEventListener("animationend", () => c.remove());
+    }
+  }
+
+  // Onda que sale desde donde se hizo clic
+  document.addEventListener("pointerdown", e => {
+    const b = e.target.closest(".filtro, .enviar");
+    if (!b || sinMovimiento) return;
+    const r = b.getBoundingClientRect(), o = document.createElement("span");
+    o.className = "onda";
+    o.style.left = e.clientX - r.left + "px";
+    o.style.top = e.clientY - r.top + "px";
+    b.appendChild(o);
+    o.addEventListener("animationend", () => o.remove());
+  });
+
+  // La tarjeta del libro se inclina hacia el mouse (solo con mouse, no en celulares)
+  if (!sinMovimiento && matchMedia("(hover: hover)").matches) {
+    catalogo.addEventListener("pointermove", e => {
+      const t = e.target.closest(".libro");
+      if (!t) return;
+      const r = t.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      t.style.setProperty("--ry", (x - 0.5) * 14 + "deg");
+      t.style.setProperty("--rx", (0.5 - y) * 14 + "deg");
+      t.style.setProperty("--mx", x * 100 + "%");
+      t.style.setProperty("--my", y * 100 + "%");
+    });
+  }
+
+  // Barra de avance arriba de la página
+  const progreso = document.getElementById("progreso");
+  addEventListener("scroll", () => {
+    const total = document.documentElement.scrollHeight - innerHeight;
+    progreso.style.transform = `scaleX(${total > 0 ? scrollY / total : 0})`;
+  }, { passive: true });
+
+  // Lo marcado con "revelar" aparece cuando llega a la pantalla
+  const vigia = "IntersectionObserver" in window && !sinMovimiento
+    ? new IntersectionObserver(entradas => entradas.forEach(en => {
+        if (en.isIntersecting) { en.target.classList.add("visible"); vigia.unobserve(en.target); }
+      }), { threshold: 0.15 })
+    : null;
+  function observarRevelar() {
+    document.querySelectorAll(".revelar:not(.visible)").forEach(el => vigia ? vigia.observe(el) : el.classList.add("visible"));
+  }
 
   catalogo.addEventListener("click", e => {
     const tarjeta = e.target.closest(".libro");
@@ -695,9 +1071,12 @@
       if (datos.actualizado === versionActual) return;   // no hay cambios
       versionActual = datos.actualizado;
       libros = datos.libros;
+      resenas = Array.isArray(datos.resenas) ? datos.resenas : [];
+      conServidor = true;
       aplicarSitio(datos.sitio || {});
       pintarFiltros();
       primeraVez ? mostrar() : mostrarRapido();
+      pintarResenas();
     } catch {
       // sin servidor: se usa la lista de respaldo
       if (primeraVez) mostrar();

@@ -130,3 +130,79 @@ test("salir cierra la sesión", async () => {
   const r = await fetch(BASE + "/api/sesion", { headers: { "X-Sesion": sesion } });
   assert.strictEqual(r.status, 401);
 });
+
+// ---------- Reseñas ----------
+const enviarResena = cuerpo => fetch(BASE + "/api/resenas", {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo),
+});
+const conSesion = (sesion, ruta, cuerpo) => fetch(BASE + ruta, {
+  method: cuerpo ? "POST" : "GET",
+  headers: { "Content-Type": "application/json", "X-Sesion": sesion },
+  body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+});
+
+test("una reseña nueva no se publica hasta que la aprueban", async () => {
+  const { libros } = await (await fetch(BASE + "/api/datos")).json();
+  const libroId = libros[1].id;
+  const r = await enviarResena({ libroId, nombre: "Sofía, 7°", estrellas: 5, texto: "Me encantó <b>mucho</b> este libro" });
+  assert.strictEqual(r.status, 200);
+
+  let publico = await (await fetch(BASE + "/api/datos")).json();
+  assert.ok(!publico.resenas.some(x => x.nombre === "Sofía, 7°"));
+
+  const sesion = await entrar();
+  const todas = await (await conSesion(sesion, "/api/resenas")).json();
+  const mia = todas.find(x => x.nombre === "Sofía, 7°");
+  assert.strictEqual(mia.aprobada, false);
+  assert.strictEqual(mia.texto, "Me encantó <b>mucho</b> este libro"); // se guarda tal cual; la página la muestra como texto
+
+  assert.strictEqual((await conSesion(sesion, "/api/resenas/aprobar", { id: mia.id })).status, 200);
+  publico = await (await fetch(BASE + "/api/datos")).json();
+  const visible = publico.resenas.find(x => x.id === mia.id);
+  assert.deepStrictEqual(Object.keys(visible).sort(), ["estrellas", "fecha", "id", "libroId", "nombre", "texto"]);
+
+  assert.strictEqual((await conSesion(sesion, "/api/resenas/borrar", { id: mia.id })).status, 200);
+  publico = await (await fetch(BASE + "/api/datos")).json();
+  assert.ok(!publico.resenas.some(x => x.id === mia.id));
+});
+
+test("rechaza reseñas incompletas o de libros que no existen", async () => {
+  const { libros } = await (await fetch(BASE + "/api/datos")).json();
+  const libroId = libros[0].id;
+  for (const malo of [
+    { libroId: "no-existe", nombre: "Ana", estrellas: 4, texto: "Muy bueno" },
+    { libroId, nombre: "", estrellas: 4, texto: "Muy bueno" },
+    { libroId, nombre: "Ana", estrellas: 9, texto: "Muy bueno" },
+    { libroId, nombre: "Ana", estrellas: 0, texto: "Muy bueno" },
+    { libroId, nombre: "Ana", estrellas: 3, texto: "ok" },
+  ]) assert.strictEqual((await enviarResena(malo)).status, 400, JSON.stringify(malo));
+});
+
+test("los robots que llenan el campo trampa no dejan reseñas", async () => {
+  const { libros } = await (await fetch(BASE + "/api/datos")).json();
+  const r = await enviarResena({ libroId: libros[0].id, nombre: "Robot", estrellas: 5, texto: "Compra aquí", web: "spam.com" });
+  assert.strictEqual(r.status, 200);
+  const sesion = await entrar();
+  const todas = await (await conSesion(sesion, "/api/resenas")).json();
+  assert.ok(!todas.some(x => x.nombre === "Robot"));
+});
+
+test("sin sesión no se pueden ver pendientes, aprobar ni borrar", async () => {
+  assert.strictEqual((await fetch(BASE + "/api/resenas")).status, 401);
+  assert.strictEqual((await fetch(BASE + "/api/resenas/aprobar", { method: "POST", body: "{}" })).status, 401);
+  assert.strictEqual((await fetch(BASE + "/api/resenas/borrar", { method: "POST", body: "{}" })).status, 401);
+});
+
+test("al eliminar un libro se van sus reseñas", async () => {
+  const sesion = await entrar();
+  const datos = await (await fetch(BASE + "/api/datos")).json();
+  const libro = datos.libros[datos.libros.length - 1];
+  await enviarResena({ libroId: libro.id, nombre: "Luis", estrellas: 3, texto: "Está bien, algo largo" });
+  datos.libros = datos.libros.filter(l => l !== libro);
+  const r = await fetch(BASE + "/api/datos", {
+    method: "PUT", headers: { "Content-Type": "application/json", "X-Sesion": sesion }, body: JSON.stringify(datos),
+  });
+  assert.strictEqual(r.status, 200);
+  const todas = await (await conSesion(sesion, "/api/resenas")).json();
+  assert.ok(!todas.some(x => x.libroId === libro.id));
+});

@@ -52,6 +52,8 @@ QUÉ SE PUEDE HACER EN EL PANEL
   - Subir la foto de la portada (desde el celular se puede tomar con la cámara).
   - Registrar préstamos (−) y devoluciones (+).
   - Cambiar los textos de la página, los enlaces de redes sociales y las categorías.
+  - Aprobar o borrar las reseñas que escriben los estudiantes (pestaña "Reseñas";
+    el número rojo dice cuántas esperan). Ninguna reseña se publica sin aprobación.
   Los estudiantes ven los cambios en menos de 10 segundos, sin recargar.
 
 ARCHIVOS
@@ -59,6 +61,8 @@ ARCHIVOS
   admin.html  -> panel de ejecutivos
   server.js   -> servidor (necesita Node.js instalado)
   datos.json  -> aquí se guardan los libros y textos (haz copias de seguridad)
+  resenas.json -> reseñas de los estudiantes (se crea sola; no se sube a GitHub
+                  porque lleva nombres de estudiantes; también se pierde en el plan gratis de Render)
   config.json -> clave del panel (solo en el computador, no se sube)
   render.yaml, package.json -> configuración para publicar en internet
   fotos/      -> fotos subidas desde el panel

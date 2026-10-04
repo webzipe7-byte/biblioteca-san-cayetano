@@ -119,6 +119,28 @@
   .botones { display: flex; gap: 6px; }
   .vacio { padding: 30px; text-align: center; color: #666; }
 
+  /* ---------- Reseñas ---------- */
+  .globo {
+    display: inline-block; min-width: 22px; padding: 1px 6px; margin-left: 4px;
+    border-radius: 11px; background: var(--rojo); color: var(--blanco);
+    font-size: .78rem; text-align: center;
+    animation: pulso 1.6s ease-in-out infinite;
+  }
+  @keyframes pulso { 50% { transform: scale(1.18); } }
+  .titulo-grupo { font-size: 1rem; margin: 18px 0 6px; }
+  .titulo-grupo:first-child { margin-top: 0; }
+  .resena {
+    display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: start;
+    padding: 12px 6px; border-bottom: 1px solid var(--borde);
+    animation: subir .3s ease-out both;
+  }
+  .resena.espera { background: #fffaf0; border-left: 4px solid #f5b301; padding-left: 12px; }
+  .resena h3 { font-size: .95rem; }
+  .resena .estrellas { color: #f5b301; letter-spacing: 1px; }
+  .resena p { font-size: .92rem; overflow-wrap: anywhere; }
+  .resena small { color: #555; font-weight: 600; }
+  .resena .botones { grid-row: 1 / span 3; grid-column: 2; align-self: center; }
+
   /* ---------- Editor de libro ---------- */
   .fondo {
     position: fixed; inset: 0; background: rgba(10,30,60,.55); z-index: 40;
@@ -215,6 +237,8 @@
     .fila { grid-template-columns: 56px 1fr; }
     .fila.encabezado { display: none; }
     .fila > .col-cat, .fila > .contador, .fila > .botones { grid-column: 2; }
+    .resena { grid-template-columns: 1fr; }
+    .resena .botones { grid-row: auto; grid-column: 1; }
     .editor-cuerpo { grid-template-columns: 1fr; }
     .vista { order: -1; display: flex; gap: 14px; align-items: flex-start; }
     .vista-tarjeta { width: 140px; position: static; }
@@ -277,6 +301,7 @@
     <nav class="pestanas">
       <button class="pestana activa" data-p="libros">📚 Libros</button>
       <button class="pestana" data-p="pagina">🎨 Textos de la página</button>
+      <button class="pestana" data-p="resenas">⭐ Reseñas<span class="globo" id="nPendientes" hidden></span></button>
     </nav>
 
     <!-- Pestaña: libros -->
@@ -288,6 +313,12 @@
       <p class="ayuda" style="margin-bottom:12px">Usa <b>−</b> cuando un estudiante se lleve un libro prestado y <b>+</b> cuando lo devuelva. Con <b>Editar</b> puedes cambiar la foto, la descripción y todos los datos.</p>
       <div class="fila encabezado"><span>Portada</span><span>Libro</span><span>Categoría</span><span>Disponibles</span><span></span></div>
       <div id="lista"></div>
+    </section>
+
+    <!-- Pestaña: reseñas de los estudiantes -->
+    <section class="panel" id="pResenas" hidden>
+      <p class="ayuda" style="margin-bottom:12px">Los estudiantes escriben reseñas desde la página. <b>Ninguna se publica hasta que la apruebes aquí.</b> Si una tiene groserías o no tiene que ver con el libro, bórrala.</p>
+      <div id="listaResenas"></div>
     </section>
 
     <!-- Pestaña: textos de la página -->
@@ -467,6 +498,7 @@
     $("ingreso").hidden = true;
     $("app").hidden = false;
     pintarTodo();
+    cargarResenas();
   }
   function salir() {
     if (sesion) fetch("/api/logout", { method: "POST", headers: { "X-Sesion": sesion } }).catch(() => {});
@@ -494,6 +526,8 @@
     document.querySelectorAll(".pestana").forEach(x => x.classList.toggle("activa", x === b));
     $("pLibros").hidden = b.dataset.p !== "libros";
     $("pPagina").hidden = b.dataset.p !== "pagina";
+    $("pResenas").hidden = b.dataset.p !== "resenas";
+    if (b.dataset.p === "resenas") cargarResenas();
   }));
 
   function pintarTodo() { pintarResumen(); pintarLista(); llenarSitio(); }
@@ -673,6 +707,47 @@
     datos.libros = datos.libros.filter(l => l !== editando);
     if (await publicar(`✓ “${editando.titulo}” eliminado.`)) { cerrarEditor(); pintarLista(); pintarResumen(); }
     else datos.libros = copia;
+  });
+
+  // ---------- Reseñas ----------
+  let resenas = [];
+  async function cargarResenas() {
+    try { resenas = await api("GET", "/api/resenas"); pintarResenas(); }
+    catch (e) { aviso("✗ No se pudieron cargar las reseñas: " + e.message, true); }
+  }
+  function pintarResenas() {
+    const esperan = resenas.filter(r => !r.aprobada).sort((a, b) => a.fecha - b.fecha);
+    const publicadas = resenas.filter(r => r.aprobada).sort((a, b) => b.fecha - a.fecha);
+    $("nPendientes").hidden = !esperan.length;
+    $("nPendientes").textContent = esperan.length;
+    const fila = r => {
+      const libro = datos.libros.find(l => l.id === r.libroId);
+      return `<div class="resena${r.aprobada ? "" : " espera"}" data-id="${esc(r.id)}">
+        <h3>📖 ${esc(libro ? libro.titulo : "Libro eliminado")} <span class="estrellas">${"★".repeat(r.estrellas)}</span></h3>
+        <p>${esc(r.texto)}</p>
+        <small>— ${esc(r.nombre)} · ${new Date(r.fecha).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}</small>
+        <div class="botones">
+          ${r.aprobada ? "" : '<button class="btn chico primario" type="button" data-acc="aprobar">✓ Aprobar</button>'}
+          <button class="btn chico peligro" type="button" data-acc="borrar">🗑️ Borrar</button>
+        </div>
+      </div>`;
+    };
+    $("listaResenas").innerHTML =
+      `<h3 class="titulo-grupo">⏳ Esperando aprobación (${esperan.length})</h3>`
+      + (esperan.map(fila).join("") || '<p class="vacio">No hay reseñas nuevas por revisar. 👍</p>')
+      + `<h3 class="titulo-grupo">✅ Publicadas (${publicadas.length})</h3>`
+      + (publicadas.map(fila).join("") || '<p class="vacio">Todavía no hay reseñas publicadas.</p>');
+  }
+  $("listaResenas").addEventListener("click", async e => {
+    const b = e.target.closest("button[data-acc]");
+    if (!b) return;
+    const r = resenas.find(x => x.id === b.closest(".resena").dataset.id);
+    if (b.dataset.acc === "borrar" && !confirm(`¿Borrar la reseña de ${r.nombre}?\nNo se puede deshacer.`)) return;
+    try {
+      await api("POST", "/api/resenas/" + b.dataset.acc, { id: r.id });
+      aviso(b.dataset.acc === "aprobar" ? "✓ Reseña publicada. Los estudiantes ya la ven." : "✓ Reseña borrada.");
+    } catch (err) { aviso("✗ " + err.message, true); }
+    cargarResenas();
   });
 
   // ---------- Textos de la página ----------
